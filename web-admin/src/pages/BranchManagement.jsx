@@ -1,0 +1,624 @@
+import React, { useState, useEffect } from 'react';
+import { useBranch } from '../contexts/BranchContext';
+import { Plus, Edit2, Power, Building2, MapPin, Phone, Mail, Percent, Globe, Facebook, Instagram, Twitter, Linkedin, Loader2, Lock, Eye, EyeOff, Copy, ExternalLink } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '../services/api';
+import DashboardLayout from '../layout/DashboardLayout';
+
+const slugifyBranch = (text) => {
+    return (text || '')
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-');
+};
+
+const getBranchWebUrl = (branch) => {
+    if (!branch) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://hostoapp.com';
+    const slug = slugifyBranch(branch.name) || branch.id;
+    return `${origin}/${slug}`;
+};
+
+const renderLocationLink = (branch, defaultText = "No address provided") => {
+    if (!branch) return defaultText;
+    const loc = (branch.location || "").trim();
+    const addr = (branch.address || "").trim();
+    
+    const isUrl = (str) => {
+        if (!str) return false;
+        const s = str.toLowerCase();
+        return s.startsWith("http://") || 
+               s.startsWith("https://") || 
+               s.startsWith("www.") ||
+               s.includes("google.com/maps") ||
+               s.includes("maps.google") ||
+               s.includes("maps.app.goo.gl");
+    };
+    
+    const getHref = (str) => {
+        if (!str) return "";
+        let s = str.trim();
+        if (s.toLowerCase().startsWith("http://") || s.toLowerCase().startsWith("https://")) {
+            return s;
+        }
+        return `https://${s}`;
+    };
+    
+    // Check if either is a URL
+    let url = "";
+    if (isUrl(loc)) {
+        url = getHref(loc);
+    } else if (isUrl(addr)) {
+        url = getHref(addr);
+    }
+    
+    // Determine display text for location name
+    let locDisplay = "";
+    if (loc && !isUrl(loc)) {
+        locDisplay = loc;
+    }
+    
+    // Determine display text for address
+    let addrDisplay = "";
+    if (addr && !isUrl(addr)) {
+        addrDisplay = addr;
+    }
+    
+    if (url) {
+        return (
+            <div className="flex flex-col">
+                {locDisplay && <span className="font-bold text-gray-800 text-xs uppercase tracking-wider">{locDisplay}</span>}
+                <a 
+                    href={url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-indigo-600 hover:text-indigo-800 underline font-medium text-sm transition-colors mt-0.5 inline-block"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {addrDisplay || "View on Google Maps"}
+                </a>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="flex flex-col">
+            {locDisplay && <span className="font-bold text-gray-800 text-xs uppercase tracking-wider">{locDisplay}</span>}
+            <span className="font-medium text-gray-600 line-clamp-1">{addrDisplay || defaultText}</span>
+        </div>
+    );
+};
+
+export default function BranchManagement() {
+    const { refreshBranches } = useBranch();
+    const [localBranches, setLocalBranches] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingBranch, setEditingBranch] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [formData, setFormData] = useState({
+        name: '',
+        code: '',
+        address: '',
+        phone: '',
+        email: '',
+        password: '',
+        gst_number: '',
+        facebook: '',
+        instagram: '',
+        twitter: '',
+        linkedin: '',
+        location: ''
+    });
+
+    const fetchAllBranches = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/branches?include_inactive=true');
+            setLocalBranches(response.data);
+        } catch (error) {
+            console.error('Failed to fetch branches:', error);
+            toast.error('Failed to load branches');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllBranches();
+    }, []);
+
+    const handleOpenModal = (branch = null) => {
+        setImageFile(null);
+        setImagePreview(null);
+        setShowPassword(false);
+        if (branch) {
+            setEditingBranch(branch);
+            setFormData({
+                name: branch.name,
+                code: branch.code,
+                address: branch.address || '',
+                phone: branch.phone || '',
+                email: branch.email || '',
+                password: '',
+                gst_number: branch.gst_number || '',
+                facebook: branch.facebook || '',
+                instagram: branch.instagram || '',
+                twitter: branch.twitter || '',
+                linkedin: branch.linkedin || '',
+                location: branch.location || ''
+            });
+            if (branch.image_url) {
+                setImagePreview(branch.image_url.startsWith('http') ? branch.image_url : `${api.defaults.baseURL.replace('/api', '')}${branch.image_url}`);
+            }
+        } else {
+            setEditingBranch(null);
+            setFormData({
+                name: '',
+                code: '',
+                address: '',
+                phone: '',
+                email: '',
+                password: '',
+                gst_number: '',
+                facebook: '',
+                instagram: '',
+                twitter: '',
+                linkedin: '',
+                location: ''
+            });
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const validateEmail = (email) => {
+        if (!email) return true; // Optional field
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        // Basic Email Validation
+        if (formData.email && !validateEmail(formData.email)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        if (formData.password && formData.password.trim().length > 0 && formData.password.trim().length < 6) {
+            toast.error('Password must be at least 6 characters long');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const data = new FormData();
+            Object.keys(formData).forEach(key => {
+                if (key === 'password') {
+                    if (formData.password && formData.password.trim().length > 0) {
+                        data.append('password', formData.password.trim());
+                    }
+                } else if (formData[key] !== null && formData[key] !== undefined) {
+                    data.append(key, formData[key]);
+                }
+            });
+
+            if (imageFile) {
+                data.append('image', imageFile);
+            }
+
+            if (editingBranch) {
+                await api.put(`/branches/${editingBranch.id}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                toast.success('Property updated successfully');
+            } else {
+                await api.post('/branches', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                toast.success('Property created successfully');
+            }
+            fetchAllBranches();
+            refreshBranches();
+            setIsModalOpen(false);
+        } catch (error) {
+            toast.error(error.response?.data?.detail || 'Operation failed');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleToggleStatus = async (branch) => {
+        const action = branch.is_active ? 'deactivate' : 'activate';
+        if (window.confirm(`Are you sure you want to ${action} this property?`)) {
+            try {
+                await api.patch(`/branches/${branch.id}/toggle-status`);
+                toast.success(`Property ${action}d successfully`);
+                fetchAllBranches();
+                refreshBranches();
+            } catch (error) {
+                toast.error(`Failed to ${action} property`);
+            }
+        }
+    };
+
+    return (
+        <DashboardLayout>
+            <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 z-10">
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-200 pb-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-700 to-purple-600 tracking-tight">
+                            Branch Management
+                        </h1>
+                        <p className="text-sm sm:text-base text-gray-500 mt-1 font-medium">Manage your enterprise property locations</p>
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-2.5 rounded-full hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md font-semibold"
+                    >
+                        <Plus size={20} />
+                        Add Branch
+                    </button>
+                </header>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {localBranches.map((branch) => (
+                        <div key={branch.id} className={`relative bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group ${!branch.is_active ? 'opacity-75 grayscale-[0.2]' : ''}`}>
+                            {branch.image_url && String(branch.image_url).trim() !== '' && String(branch.image_url).toLowerCase() !== 'null' ? (
+                                <div className="h-40 w-full overflow-hidden border-b border-gray-100">
+                                    <img
+                                        src={branch.image_url.startsWith('http') ? branch.image_url : `${api.defaults.baseURL.replace('/api', '')}${branch.image_url}`}
+                                        alt={branch.name}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="h-40 w-full bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center border-b border-gray-100">
+                                    <Building2 className="text-indigo-200" size={48} />
+                                </div>
+                            )}
+
+                            <div className="p-5 flex justify-between items-start relative z-10">
+                                <div className="flex items-center gap-4">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`text-lg font-bold tracking-tight ${branch.is_active ? 'text-gray-800' : 'text-gray-500 line-through'}`}>{branch.name}</h3>
+                                            {!branch.is_active && (
+                                                <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                                    Disabled
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full mt-1 inline-block ${branch.is_active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-500'}`}>
+                                            {branch.code}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => handleOpenModal(branch)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit Property">
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button onClick={() => handleToggleStatus(branch)} className={`p-2 rounded-lg transition-colors ${branch.is_active ? 'text-rose-600 hover:bg-rose-50' : 'text-emerald-600 hover:bg-emerald-50'}`} title={branch.is_active ? "Disable Property" : "Enable Property"}>
+                                        <Power size={16} />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="px-5 pb-5 space-y-3 relative z-10">
+                                <div className="flex items-start gap-3 text-sm text-gray-600">
+                                    <MapPin size={18} className="mt-0.5 shrink-0 text-indigo-500" />
+                                    {renderLocationLink(branch, "No address provided")}
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                    <Phone size={18} className="shrink-0 text-gray-400" />
+                                    <span className="font-medium">{branch.phone || 'No phone provided'}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                    <Mail size={18} className="shrink-0 text-gray-400" />
+                                    <span className="font-medium truncate">{branch.email || 'No email provided'}</span>
+                                </div>
+
+                                {/* Dedicated Web View URL Box for this Branch */}
+                                <div className="mt-3 p-3 bg-gradient-to-r from-indigo-50/80 to-purple-50/60 rounded-xl border border-indigo-100 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="font-bold text-indigo-900 flex items-center gap-1.5">
+                                            <Globe size={13} className="text-indigo-600" />
+                                            Branch Web View URL
+                                        </span>
+                                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                            Live Web
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="text-[11px] bg-white px-2.5 py-1.5 rounded-lg border border-indigo-200 text-indigo-700 font-mono flex-1 truncate select-all font-bold">
+                                            {`/${slugifyBranch(branch.name) || branch.id}`}
+                                        </code>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const url = getBranchWebUrl(branch);
+                                                navigator.clipboard.writeText(url);
+                                                toast.success(`Copied web view URL for ${branch.name}!`);
+                                            }}
+                                            className="p-1.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 border border-indigo-200 rounded-lg transition-all shadow-sm flex items-center justify-center shrink-0 cursor-pointer"
+                                            title="Copy Direct Link to Clipboard"
+                                        >
+                                            <Copy size={14} />
+                                        </button>
+                                        <a
+                                            href={getBranchWebUrl(branch)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all shadow-sm flex items-center justify-center shrink-0"
+                                            title="Open Web View in New Tab"
+                                        >
+                                            <ExternalLink size={14} />
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-50">
+                                    <div className="flex gap-2.5">
+                                        {branch.facebook && <Facebook size={16} className="text-gray-300 hover:text-blue-600 cursor-pointer transition-colors" title="Facebook" />}
+                                        {branch.instagram && <Instagram size={16} className="text-gray-300 hover:text-pink-600 cursor-pointer transition-colors" title="Instagram" />}
+                                        {branch.twitter && <Twitter size={16} className="text-gray-300 hover:text-sky-400 cursor-pointer transition-colors" title="Twitter" />}
+                                        {branch.linkedin && <Linkedin size={16} className="text-gray-300 hover:text-blue-700 cursor-pointer transition-colors" title="LinkedIn" />}
+                                    </div>
+                                    <div className="ml-auto text-[10px] font-bold text-emerald-600 bg-emerald-50/50 px-2 py-1 rounded uppercase">
+                                        GST: {branch.gst_number || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {isModalOpen && (
+                    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+                        <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-200 my-8">
+                            <div className="p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-4">
+                                    {editingBranch ? 'Edit Property Details' : 'Register New Property'}
+                                </h2>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Image Section */}
+                                        <div className="col-span-1 md:col-span-2">
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">Property Profile Image</label>
+                                            <div className="flex items-center gap-6">
+                                                <div className="h-32 w-48 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 overflow-hidden flex items-center justify-center relative group">
+                                                    {imagePreview ? (
+                                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Building2 className="text-gray-300" size={32} />
+                                                    )}
+                                                    <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer text-white text-xs font-bold">
+                                                        Change Image
+                                                        <input type="file" className="hidden" onChange={handleImageChange} accept="image/*" />
+                                                    </label>
+                                                </div>
+                                                <div className="flex-1 text-xs text-gray-500">
+                                                    <p className="font-bold mb-1">Upload a high-quality property banner</p>
+                                                    <p>Recommended size: 1200x600px</p>
+                                                    <p>Supports: JPG, PNG, WEBP</p>
+                                                    <button type="button" onClick={() => document.querySelector('input[type="file"]').click()} className="mt-3 text-indigo-600 font-bold hover:text-indigo-700">
+                                                        Choose File
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Basic Information</h3>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Property Name</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="e.g., Hosto Beach Resort"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Branch Code / Hotel Code</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.code}
+                                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-mono tracking-wider"
+                                                    placeholder="e.g., BEACH, MAIN, HCC001"
+                                                />
+                                                <p className="text-[11px] text-gray-400 mt-1">Used for Channel Manager sync. Must match your hotel code exactly.</p>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Location</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.location}
+                                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="e.g., Varkala"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Contact Details</h3>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="+91 98765 43210"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                                                <input
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                    placeholder="contact@resort.com"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1 flex items-center justify-between">
+                                                    <span>Admin Account Password</span>
+                                                    <span className="text-[10px] text-gray-400 font-normal lowercase">{editingBranch ? "(leave blank to keep current)" : "(optional)"}</span>
+                                                </label>
+                                                <div className="relative">
+                                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                                        <Lock size={16} />
+                                                    </div>
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        value={formData.password}
+                                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                        className="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-400 text-sm"
+                                                        placeholder={editingBranch ? "Set new admin password" : "Create admin password"}
+                                                        autoComplete="new-password"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                                        tabIndex={-1}
+                                                    >
+                                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Social Presence</h3>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Facebook</label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.facebook}
+                                                            onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
+                                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                                            placeholder="Profile URL"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Instagram</label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.instagram}
+                                                            onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                                            placeholder="Username/URL"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Twitter/X</label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.twitter}
+                                                            onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                                            placeholder="Username"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">LinkedIn</label>
+                                                        <input
+                                                            type="text"
+                                                            value={formData.linkedin}
+                                                            onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
+                                                            className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-xs"
+                                                            placeholder="Profile URL"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Compliance</h3>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">GST Registration No.</label>
+                                                    <input
+                                                        type="text"
+                                                        value={formData.gst_number}
+                                                        onChange={(e) => setFormData({ ...formData, gst_number: e.target.value })}
+                                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                                        placeholder="29AAAAA0000A1Z5"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Property Address</label>
+                                                    <textarea
+                                                        value={formData.address}
+                                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                        className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                                        rows="2"
+                                                        placeholder="Street, City, State, ZIP"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsModalOpen(false)}
+                                            disabled={isSubmitting}
+                                            className="px-6 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-bold transition-all disabled:opacity-50"
+                                        >
+                                            Discard
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmitting}
+                                            className="px-8 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-xl hover:-translate-y-0.5 transition-all font-bold shadow-lg flex items-center justify-center gap-2 min-w-[160px] disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="animate-spin" size={18} />
+                                                    {editingBranch ? 'Updating...' : 'Registering...'}
+                                                </>
+                                            ) : (
+                                                editingBranch ? 'Update Property' : 'Register Property'
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </DashboardLayout>
+    );
+}
