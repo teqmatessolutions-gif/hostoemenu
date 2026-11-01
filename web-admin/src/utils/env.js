@@ -20,6 +20,7 @@ export const isHostoDeployment = () => {
     hostname === "www.hostoapp.com" ||
     hostname.includes("hosto") ||
     hostname.includes("stayone") ||
+    path.startsWith("/emenuadmin") ||
     path.startsWith("/hostoadmin") ||
     path.startsWith("/hosto") ||
     path.startsWith("/admin") ||

@@ -487,7 +487,7 @@ export default function App() {
             </button>
 
             <a
-              href="http://localhost:3000"
+              href="http://localhost:3000/emenuadmin"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-black px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition"

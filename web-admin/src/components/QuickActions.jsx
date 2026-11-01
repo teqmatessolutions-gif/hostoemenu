@@ -9,68 +9,68 @@ import '../styles/premium-dashboard.css';
 const QuickActions = () => {
     const navigate = useNavigate();
 
-    const actions = [
+        const actions = [
         {
-            id: 'new-booking',
-            title: 'New Booking',
-            icon: '🏨',
-            description: 'Create a new reservation',
+            id: 'live-orders',
+            title: 'Live Kitchen Orders',
+            icon: '🍽️',
+            description: 'Active KOT dispatch',
+            color: 'warning',
+            path: '/food-orders'
+        },
+        {
+            id: 'table-qr',
+            title: 'Table & QR Stands',
+            icon: '📱',
+            description: 'Instant scan-to-order',
             color: 'primary',
-            path: '/bookings'
+            path: '/table-qr'
         },
         {
-            id: 'check-in',
-            title: 'Check-in',
-            icon: '✅',
-            description: 'Check-in a guest',
+            id: 'billing-pos',
+            title: 'Billing & POS',
+            icon: '🧾',
+            description: 'Fast counter settlement',
             color: 'success',
-            path: '/bookings'
-        },
-        {
-            id: 'check-out',
-            title: 'Check-out',
-            icon: '🚪',
-            description: 'Process checkout',
-            color: 'info',
             path: '/billing'
         },
         {
-            id: 'food-order',
-            title: 'Food Order',
-            icon: '🍽️',
-            description: 'Create food order',
-            color: 'warning',
-            path: '/food-management'
-        },
-        {
-            id: 'service',
-            title: 'Assign Service',
-            icon: '🛎️',
-            description: 'Assign room service',
+            id: 'menu-catalog',
+            title: 'Food Menu',
+            icon: '🍕',
+            description: 'Dishes & categories',
             color: 'purple',
-            path: '/services'
+            path: '/food-orders'
         },
         {
             id: 'expense',
             title: 'Add Expense',
             icon: '💰',
-            description: 'Record an expense',
+            description: 'Kitchen groceries & bills',
             color: 'danger',
             path: '/expenses'
         },
         {
-            id: 'reports',
-            title: 'View Reports',
-            icon: '📊',
-            description: 'Analytics & reports',
+            id: 'kitchen-inventory',
+            title: 'Kitchen Stock',
+            icon: '📦',
+            description: 'Ingredients & raw items',
             color: 'info',
-            path: '/reports'
+            path: '/inventory'
+        },
+        {
+            id: 'reports',
+            title: 'Sales Analytics',
+            icon: '📊',
+            description: 'Daily revenue & trends',
+            color: 'info',
+            path: '/report'
         },
         {
             id: 'monthly-bill',
             title: 'Monthly Bill',
             icon: '💳',
-            description: 'Subscription & invoices',
+            description: 'SaaS plan & invoice',
             color: 'purple',
             path: '/subscription'
         }

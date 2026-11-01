@@ -76,7 +76,8 @@ API.interceptors.response.use(
       const path = window.location.pathname;
       let loginPath = '/'; // Default fallback
 
-      if (path.startsWith("/hostoadmin")) loginPath = "/hostoadmin";
+      if (path.startsWith("/emenuadmin")) loginPath = "/emenuadmin";
+      else if (path.startsWith("/hostoadmin")) loginPath = "/emenuadmin";
       else if (path.startsWith("/admin")) loginPath = "/admin";
       else if (path.startsWith("/stayone/admin")) loginPath = "/hostoadmin";
       else if (path.startsWith("/stayoneadmin")) loginPath = "/hostoadmin";

@@ -702,14 +702,14 @@ const Dashboard = () => {
             sub="Today"
           />
           <KPICard
-            label="ADR"
-            value={fmtCurrency(summary ? (summary.room_bookings > 0 ? summary.total_revenue / summary.room_bookings : 0) : 0)}
-            sub="Avg Daily Rate"
+            label="Avg Order Value"
+            value={fmtCurrency(foodOrdersMetrics.averageOrderValue || 0)}
+            sub="Per food order"
           />
           <KPICard
-            label="RevPAR"
-            value={fmtCurrency(summary ? (rooms.length > 0 ? summary.total_revenue / rooms.length : 0) : 0)}
-            sub="Rev/Avail Room"
+            label="Active Orders"
+            value={foodOrders.filter(o => !["completed","delivered","cancelled"].includes((o.status||"").toLowerCase())).length}
+            sub="Kitchen in progress"
           />
           <KPICard
             label="Total Expenses"
@@ -723,24 +723,14 @@ const Dashboard = () => {
           />
         </section>
 
-        {/* KPI Cards - Row 2: Bookings & Rooms */}
-        <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
-          <KPICard label="Bookings (Active)" value={`${bookingCounts.active}`} sub={`Cancelled: ${bookingCounts.cancelled}`} />
-          <KPICard label="Package Bookings" value={packageBookingsMetrics.total} sub={fmtCurrency(packageBookingsMetrics.totalRevenue)} />
-          <KPICard label="Total Packages" value={summary?.package_bookings ?? packages.length} sub="Booked / Available" />
-          <KPICard label="Rooms" value={`${summary?.booked_rooms ?? roomCounts.occupied}/${summary?.total_rooms ?? roomCounts.total}`} sub="Occupied / Total" />
-          <KPICard label="Available Rooms" value={summary?.available_rooms ?? roomCounts.available} sub="Ready" />
-          <KPICard label="Maintenance Rooms" value={summary?.maintenance_rooms ?? roomCounts.maintenance} sub="Under repair" />
-        </section>
-
-        {/* KPI Cards - Row 3: Food & Services */}
+        {/* KPI Cards - Row 2: Dining & Food Operations */}
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4">
           <KPICard label="Food Orders" value={foodOrdersMetrics.total} sub={`Completed: ${foodOrdersMetrics.completed}`} />
           <KPICard label="Food Revenue" value={fmtCurrency(foodOrdersMetrics.totalRevenue)} sub={`Avg: ${fmtCurrency(foodOrdersMetrics.averageOrderValue)}`} />
-          <KPICard label="Food Items" value={foodItems.length} sub="Menu items" />
-          <KPICard label="Services" value={summary?.services_count ?? servicesMetrics.totalServices} sub="Available" />
-          <KPICard label="Assigned Services" value={summary?.assigned_services ?? servicesMetrics.totalAssigned} sub={`Completed: ${summary?.completed_services ?? servicesMetrics.completed}`} />
-          <KPICard label="Service Revenue" value={fmtCurrency(summary?.total_service_revenue ?? servicesMetrics.totalRevenue)} sub={`Avg: ${fmtCurrency(summary?.total_service_revenue / (summary?.assigned_services || 1))}`} />
+          <KPICard label="Menu Items" value={foodItems.length} sub="Active catalog" />
+          <KPICard label="Inventory Items" value={summary?.inventory_items ?? inventoryMetrics.totalItems} sub={`Categories: ${summary?.inventory_categories ?? inventoryMetrics.categories}`} />
+          <KPICard label="Stock Value" value={fmtCurrency(summary?.total_inventory_value ?? inventoryMetrics.totalValue)} sub="Raw ingredients" />
+          <KPICard label="Low Stock Alert" value={summary?.low_stock_items ?? inventoryMetrics.lowStock} sub="Needs reorder" />
         </section>
 
         {/* KPI Cards - Row 4: Inventory & Employees */}
@@ -912,16 +902,16 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card title="Packages by Booking">
+          <Card title="Food Orders Trend">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={packagesByBookings} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <LineChart data={foodOrdersRevenueSeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="count" fill="#A78BFA" radius={[8, 8, 0, 0]} />
-                </BarChart>
+                  <Line type="monotone" dataKey="revenue" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </Card>
@@ -976,35 +966,51 @@ const Dashboard = () => {
 
         {/* Tables */}
         <section className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-          <Card title="Latest Bookings">
+          <Card title="Latest Food & Kitchen Orders">
             <div className="overflow-x-auto w-full -mx-2 sm:mx-0">
               <table className="min-w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-gray-50 text-gray-700">
-                    <Th>Guest</Th>
-                    <Th className="hidden sm:table-cell">Room</Th>
-                    <Th className="hidden lg:table-cell">Check-in</Th>
-                    <Th className="hidden lg:table-cell">Check-out</Th>
+                    <Th>Order ID</Th>
+                    <Th className="hidden sm:table-cell">Table / Type</Th>
+                    <Th>Items</Th>
+                    <Th className="hidden md:table-cell">Amount</Th>
                     <Th>Status</Th>
                   </tr>
                 </thead>
                 <tbody>
-                  {latestBookings.map((b) => (
-                    <tr key={b.id} className="border-t hover:bg-gray-50">
-                      <Td className="text-xs sm:text-sm">{b.guest_name || b.guest || "-"}</Td>
-                      <Td className="text-xs sm:text-sm hidden sm:table-cell">{b.room?.number ? `#${b.room.number}${b.room?.type ? ` (${b.room.type})` : ''}` : (b.room_number || "-")}</Td>
-                      <Td className="text-xs sm:text-sm hidden lg:table-cell">{b.check_in}</Td>
-                      <Td className="text-xs sm:text-sm hidden lg:table-cell">{b.check_out}</Td>
+                  {latestFood.map((o) => (
+                    <tr key={o.id} className="border-t hover:bg-gray-50">
+                      <Td className="font-semibold text-xs sm:text-sm">#{o.id}</Td>
+                      <Td className="text-xs sm:text-sm hidden sm:table-cell">
+                        {o.table_number ? `Table ${o.table_number}` : (o.order_type || "Dine-In")}
+                      </Td>
+                      <Td className="text-xs sm:text-sm">
+                        {Array.isArray(o.items) ? o.items.length : 1} items
+                      </Td>
+                      <Td className="text-xs sm:text-sm hidden md:table-cell font-bold text-gray-900">
+                        {fmtCurrency(o.total_amount || o.total || 0)}
+                      </Td>
                       <Td>
-                        <span className={`px-2 py-1 text-xs rounded font-semibold ${String(b.status || "").toLowerCase().includes("cancel")
-                          ? "bg-red-100 text-red-600"
-                          : "bg-green-100 text-green-700"
-                          }`}>
-                          {b.status}
+                        <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                          String(o.status || "").toLowerCase().includes("complete") || String(o.status || "").toLowerCase().includes("deliver")
+                            ? "bg-emerald-100 text-emerald-700"
+                            : String(o.status || "").toLowerCase().includes("cook") || String(o.status || "").toLowerCase().includes("prep")
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {o.status || "Pending"}
                         </span>
                       </Td>
                     </tr>
                   ))}
+                  {latestFood.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="text-center py-6 text-gray-400">
+                        No food orders placed yet. Orders from QR scans will appear here in real-time.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

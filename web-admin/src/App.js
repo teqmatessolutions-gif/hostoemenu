@@ -40,9 +40,12 @@ import SaasPlanEditor from "./pages/SaasPlanEditor.jsx";
 
 const getRouterBasename = () => {
   if (typeof window === "undefined") {
-    return "/admin";
+    return "/emenuadmin";
   }
   const path = window.location.pathname || "";
+  if (path.startsWith("/emenuadmin")) {
+    return "/emenuadmin";
+  }
   if (path.startsWith("/hostoadmin")) {
     return "/hostoadmin";
   }
@@ -75,7 +78,7 @@ const getRouterBasename = () => {
   if (hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.")) {
     return "";
   }
-  return "/hostoadmin";
+  return "/emenuadmin";
 };
 
 function App() {
@@ -88,6 +91,20 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            {/* Direct URL aliases for emenuadmin / hostoadmin */}
+            <Route path="/emenuadmin" element={<Login />} />
+            <Route path="/emenuadmin/*" element={<Navigate to="/" replace />} />
+            <Route path="/hostoadmin" element={<Login />} />
+            <Route path="/hostoadmin/*" element={<Navigate to="/" replace />} />
+            {/* Obsolete hotel/resort sections gracefully redirected to dashboard */}
+            <Route path="/bookings" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/rooms" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/services" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/packages" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/package" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/guestprofiles" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/Userfrontend_data" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/laundry" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={
               <ProtectedRoute requiredPermission="/dashboard">
                 <Dashboard />
