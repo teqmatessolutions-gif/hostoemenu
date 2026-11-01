@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { 
-  Utensils, ShoppingBag, Search, Plus, Minus, X, Check, Phone, 
-  MapPin, Clock, ArrowRight, Sparkles, Filter, AlertCircle, 
-  ChevronDown, Send, CheckCircle2, RotateCcw, ShieldCheck, 
-  Building2, QrCode, Receipt, Layers, Users, ExternalLink,
-  ChevronRight, Star, HeartHandshake, Zap, CheckCircle
+import {
+  Utensils, ShoppingBag, Search, Plus, Minus, X, Check, Phone, MapPin, Clock, ArrowRight, Sparkles, Filter, AlertCircle, ChevronDown, Send, CheckCircle2, RotateCcw, ShieldCheck, Building2, QrCode, Receipt, Layers, Users, ExternalLink, ChevronRight, Star, HeartHandshake, Zap, CheckCircle, Bot, Flame, Leaf
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";

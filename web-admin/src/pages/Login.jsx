@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 import hostoLogo from "../assets/hosto-emenu-logo.png";
 import { jwtDecode } from "jwt-decode";
-import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, ShieldCheck, Clock, AlertCircle, TrendingUp, Zap, Radio, Globe } from "lucide-react";
+import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, ShieldCheck, Clock, AlertCircle, TrendingUp, Zap, Radio, Globe, Utensils, QrCode, Receipt } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -233,9 +233,9 @@ export default function LoginPage() {
           {/* SaaS Self-Service Registration Callout */}
           <div className="mt-6 pt-6 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-500">
-              New property or resort chain?{" "}
+              New restaurant, cafe, or food chain?{" "}
               <Link to="/register" className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
-                Register Your Property &rarr;
+                Register Your Restaurant &rarr;
               </Link>
             </p>
           </div>
@@ -254,15 +254,15 @@ export default function LoginPage() {
 
       {/* RIGHT PANEL - Brand Image & Animated Showcase Area */}
       <div className="hidden lg:flex flex-1 relative bg-slate-950 overflow-hidden">
-        {/* Animated Business Growth Image 1 */}
+        {/* Animated Restaurant Dining Image 1 */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-slideshow-1 scale-102"
-          style={{ backgroundImage: `url('${process.env.PUBLIC_URL}/growth-bg1.png')` }}
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&auto=format&fit=crop&q=80')` }}
         />
-        {/* Animated Business Growth Image 2 */}
+        {/* Animated Restaurant Gourmet Kitchen Image 2 */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-slideshow-2 scale-102"
-          style={{ backgroundImage: `url('${process.env.PUBLIC_URL}/growth-bg2.png')` }}
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1600&auto=format&fit=crop&q=80')` }}
         />
         
         {/* Animated Drifting Aurora Glow Orbs */}
@@ -278,10 +278,10 @@ export default function LoginPage() {
         {/* Ambient Vignette Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-slate-950/20"></div>
 
-        {/* ── 1. Floating Metric Badge: Live OTA Channel Sync (Top Right) ── */}
-        <div className="absolute top-8 right-10 z-20 animate-float-slow hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/75 backdrop-blur-xl border border-white/15 shadow-2xl shadow-indigo-950/60 hover:border-emerald-400/40 transition-all duration-300 group cursor-default">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
-            <Zap size={16} />
+        {/* ── 1. Floating Metric Badge: Live KOT Kitchen Sync (Top Right) ── */}
+        <div className="absolute top-8 right-10 z-20 animate-float-slow hidden xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-amber-500/30 shadow-2xl shadow-black/80 hover:border-amber-400/50 transition-all duration-300 group cursor-default">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
+            <Receipt size={18} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
@@ -289,37 +289,37 @@ export default function LoginPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Live Channel Sync</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">Live Kitchen KOT</span>
             </div>
-            <div className="text-xs font-bold text-slate-200">Aiosell • 4 Channels Active</div>
+            <div className="text-xs font-bold text-slate-200">Table 02 • Truffle Margherita Baking</div>
           </div>
         </div>
 
-        {/* ── 2. Floating Metric Badge: Today's Occupancy & Yield (Center Right) ── */}
-        <div className="absolute top-[32%] right-8 z-20 animate-float-delayed hidden xl:flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/15 shadow-2xl shadow-purple-950/60 hover:border-indigo-400/40 transition-all duration-300 group cursor-default">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
+        {/* ── 2. Floating Metric Badge: Today's Table Turns (Center Right) ── */}
+        <div className="absolute top-[32%] right-8 z-20 animate-float-delayed hidden xl:flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-white/15 shadow-2xl shadow-black/80 hover:border-amber-400/40 transition-all duration-300 group cursor-default">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
             <TrendingUp size={20} />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-wider text-indigo-300">Today's Occupancy</div>
+            <div className="text-[10px] font-black uppercase tracking-wider text-amber-300">Today's Restaurant Turns</div>
             <div className="flex items-baseline gap-2">
-              <span className="text-base font-black text-white">94.8%</span>
-              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">+18% Yield</span>
+              <span className="text-base font-black text-white">164 Orders</span>
+              <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded-md border border-emerald-500/30">8.9m Avg Prep</span>
             </div>
           </div>
         </div>
 
-        {/* ── 3. Floating Toast Badge: Just Booked Notification (Top Left) ── */}
-        <div className="absolute top-[16%] left-10 z-20 animate-float-alt hidden 2xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/80 backdrop-blur-xl border border-white/15 shadow-2xl shadow-amber-950/40 hover:border-amber-400/40 transition-all duration-300 group cursor-default">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
-            <Sparkles size={16} />
+        {/* ── 3. Floating Toast Badge: Scanned Table Order (Top Left) ── */}
+        <div className="absolute top-[16%] left-10 z-20 animate-float-alt hidden 2xl:flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/85 backdrop-blur-xl border border-emerald-500/30 shadow-2xl shadow-black/80 hover:border-emerald-400/50 transition-all duration-300 group cursor-default">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
+            <QrCode size={18} />
           </div>
           <div>
-            <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-              Just Booked
+            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              QR Table Order
             </div>
-            <div className="text-xs font-bold text-white">Heritage Villa 201 • ₹12,500</div>
+            <div className="text-xs font-bold text-white">Table VIP-1 • 3 Items • ₹1,340</div>
           </div>
         </div>
 
@@ -327,40 +327,40 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-end p-12 xl:p-16 w-full h-full text-white">
           <div className="max-w-xl">
             {/* Tag Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold mb-6 hover:bg-white/15 transition-colors shadow-lg cursor-default">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/30 text-xs font-bold mb-6 hover:bg-amber-500/25 transition-colors shadow-lg cursor-default">
               <Sparkles size={15} className="text-amber-400 animate-spin-slow" />
-              <span className="text-slate-100 uppercase tracking-wider text-[11px]">Business Growth &amp; Analytics</span>
+              <span className="text-amber-300 uppercase tracking-wider text-[11px] font-black">Multi-Branch Restaurant Cloud OS</span>
             </div>
             
-            <h2 className="text-4xl xl:text-5xl font-black leading-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 tracking-tight drop-shadow-sm">
-              Unlock Your <br /> Property's Potential
+            <h2 className="text-4xl xl:text-5xl font-black leading-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-amber-300 tracking-tight drop-shadow-sm">
+              Accelerate Your <br /> Restaurant Operations
             </h2>
             
-            <p className="text-base xl:text-lg text-slate-300 leading-relaxed font-light border-l-2 border-indigo-400 pl-4 drop-shadow-sm">
-              Actionable insights, dynamic reporting, and robust tools to drive revenue, streamline operations, and accelerate business growth.
+            <p className="text-base xl:text-lg text-slate-300 leading-relaxed font-light border-l-2 border-amber-400 pl-4 drop-shadow-sm">
+              Contactless tabletop QR ordering, kitchen display KOT dispatch, live POS billing, and multi-branch chain management — all in one unified platform.
             </p>
 
             {/* Feature Pills Grid */}
             <div className="flex items-center gap-6 mt-10 pt-10 border-t border-white/10 flex-wrap">
               <div className="flex items-center gap-3 group cursor-default p-2 rounded-2xl hover:bg-white/5 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg group-hover:scale-110 group-hover:border-indigo-400 transition-all">
-                  <Building2 size={24} className="text-indigo-300" />
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 backdrop-blur-md flex items-center justify-center border border-amber-400/30 shadow-lg group-hover:scale-110 group-hover:border-amber-400 transition-all">
+                  <Utensils size={24} className="text-amber-300" />
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-white">Multi-Property</p>
-                  <p className="text-xs text-slate-400">Centralized control</p>
+                  <p className="text-lg font-bold text-white">Multi-Branch</p>
+                  <p className="text-xs text-slate-400">Strict branch isolation</p>
                 </div>
               </div>
 
               <div className="w-px h-10 bg-white/15 hidden sm:block"></div>
 
               <div className="flex items-center gap-3 group cursor-default p-2 rounded-2xl hover:bg-white/5 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg group-hover:scale-110 group-hover:border-indigo-400 transition-all">
-                  <ShieldCheck size={24} className="text-indigo-300" />
+                <div className="w-12 h-12 rounded-xl bg-amber-500/20 backdrop-blur-md flex items-center justify-center border border-amber-400/30 shadow-lg group-hover:scale-110 group-hover:border-amber-400 transition-all">
+                  <Receipt size={24} className="text-amber-300" />
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-white">Enterprise Grade</p>
-                  <p className="text-xs text-slate-400">Secure &amp; Reliable</p>
+                  <p className="text-lg font-bold text-white">Kitchen KOT</p>
+                  <p className="text-xs text-slate-400">Instant kitchen dispatch</p>
                 </div>
               </div>
             </div>
