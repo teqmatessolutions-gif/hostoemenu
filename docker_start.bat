@@ -11,3 +11,4 @@ echo Digital Menu Web:   http://localhost:3002 (or http://localhost:8080/)
 echo Backend API Docs:   http://localhost:8011/docs (or http://localhost:8080/api/docs)
 echo PostgreSQL:         localhost:5432 (digitalmenu_db)
 echo ==============================================================
+

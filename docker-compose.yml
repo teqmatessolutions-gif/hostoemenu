@@ -111,3 +111,4 @@ volumes:
   postgres_data:
     name: digitalmenu_postgres_data
     driver: local
+

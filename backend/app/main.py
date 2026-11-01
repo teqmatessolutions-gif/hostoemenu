@@ -1,7 +1,5 @@
-# app/main.py - Trigger Reload 3
+# Digital Menu Backend Service
 from fastapi import FastAPI, Request, HTTPException, Depends
-print(">>> STARTING WITH NEW MAIN.PY - DEBUG VERSION 2 <<<") # Confirm file load
-# Force Reload Fix 14 (Trigger Reload for Bill Filter Fix)
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -262,7 +260,7 @@ if landing_page_path.exists():
     app.mount("/landing", StaticFiles(directory="../landingpage"), name="landing")
 
 # Mount dashboard build files (React build)
-dashboard_build_path = Path("../dasboard/build")
+dashboard_build_path = Path("../web-admin/build") if Path("../web-admin/build").exists() else Path("../dasboard/build")
 if dashboard_build_path.exists():
     static_path = dashboard_build_path / "static"
     if static_path.exists():
@@ -273,7 +271,7 @@ if dashboard_build_path.exists():
         )
 
 # Mount user end build files
-userend_build_path = Path("../userend/build")
+userend_build_path = Path("../web-digitalmenu/build") if Path("../web-digitalmenu/build").exists() else Path("../userend/build")
 if userend_build_path.exists():
     static_path = userend_build_path / "static"
     if static_path.exists():
@@ -410,7 +408,7 @@ async def landing_page():
 @app.get("/admin/{path:path}", response_class=HTMLResponse)
 async def admin_dashboard(request: Request, path: str = ""):
     """Serve the React admin dashboard at www.teqmates.com/admin"""
-    dashboard_file = Path("../dasboard/build/index.html")
+    dashboard_file = Path("../web-admin/build/index.html") if Path("../web-admin/build/index.html").exists() else Path("../dasboard/build/index.html")
     if dashboard_file.exists():
         return FileResponse(dashboard_file)
     return HTMLResponse("<h1>Admin Dashboard</h1><p>Dashboard not found</p>")
@@ -421,7 +419,7 @@ async def admin_dashboard(request: Request, path: str = ""):
 @app.get("/resort/{path:path}", response_class=HTMLResponse)
 async def user_page(request: Request, path: str = ""):
     """Serve the user interface at www.teqmates.com/resort"""
-    userend_dir = Path("../userend/build").resolve()
+    userend_dir = (Path("../web-digitalmenu/build") if Path("../web-digitalmenu/build").exists() else Path("../userend/build")).resolve()
     index_file = userend_dir / "index.html"
 
     if path:
@@ -471,7 +469,7 @@ async def user_page(request: Request, path: str = ""):
 @app.get("/health")
 async def health_check():
     """Health check endpoint for monitoring"""
-    return {"status": "healthy", "message": "Resort Management System is running", "debug": "RELOAD_TEST_V4"}
+    return {"status": "healthy", "service": "Digital Menu API"}
 
 
 # API documentation redirect

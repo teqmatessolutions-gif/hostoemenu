@@ -174,3 +174,4 @@ To stop all containers:
 3. The mobile app automatically routes to:
    - `http://10.0.2.2:8011/api` on the Android emulator.
    - `http://localhost:8011/api` on iOS simulator, web, and desktop.
+

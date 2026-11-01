@@ -768,7 +768,7 @@ function TransactionDetailsModal({
 const Inventory = () => {
 
   const { activeBranchId, activeBranch } = useBranch();
-  const { hasPermission, isAdmin } = usePermissions();
+  const { hasPermission, isAdmin, isSuperadmin } = usePermissions();
 
   const addNotification = useCallback(({ title, message, type }) => {
     const content = title ? `${title}: ${message}` : message;
@@ -796,7 +796,7 @@ const Inventory = () => {
     { id: "location-stock", label: "Location Stock", permission: "inventory_location_stock:view", icon: <Building2 className="w-4 h-4 mr-2" /> },
     { id: "recipe", label: "Recipe", permission: "inventory_recipe:view", icon: <FileText className="w-4 h-4 mr-2" /> },
     { id: "inter-branch-transfer", label: "Inter-branch Transfer", permission: "inventory_transfer:view", icon: <ArrowRightLeft className="w-4 h-4 mr-2" /> }
-  ].filter(tab => hasPermission(tab.permission));
+  ].filter(tab => isSuperadmin || isAdmin || hasPermission(tab.permission));
 
   const [activeTab, setActiveTab] = useState(() => inventoryTabs[0]?.id || "items");
   const [isSubmittingVendor, setIsSubmittingVendor] = useState(false);
