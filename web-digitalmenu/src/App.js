@@ -9,10 +9,41 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";
 import HostoLogo from "./components/HostoLogo";
+import ChefAiTasteMatcher from "./components/ChefAiTasteMatcher";
 
 export default function App() {
   const API = getApiBaseUrl();
   const MEDIA = getMediaBaseUrl();
+
+  // Contact & Sales Inquiry Form State (Dedicated Hosto eMenu)
+  const [contactForm, setContactForm] = useState({
+    restaurant_name: "",
+    contact_name: "",
+    email: "",
+    phone: "",
+    outlet_type: "fine_dine",
+    branches_count: "1-3",
+    message: ""
+  });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    setContactSubmitting(true);
+    setTimeout(() => {
+      setContactSubmitting(false);
+      toast.success("Thank you! Hosto eMenu specialist will reach out within 15 minutes.");
+      setContactForm({
+        restaurant_name: "",
+        contact_name: "",
+        email: "",
+        phone: "",
+        outlet_type: "fine_dine",
+        branches_count: "1-3",
+        message: ""
+      });
+    }, 600);
+  };
 
   // Navigation mode: 'landing' (SaaS introduction) vs 'menu' (Live digital menu view)
   const [activeTab, setActiveTab] = useState(() => {
@@ -412,29 +443,51 @@ export default function App() {
           </div>
 
           {/* Center Navigation Switcher */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
-            <button
-              onClick={() => setActiveTab("landing")}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                activeTab === "landing"
-                  ? "bg-white text-slate-950 shadow-sm font-black"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+          <div className="flex items-center gap-1">
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+              <button
+                onClick={() => setActiveTab("landing")}
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  activeTab === "landing"
+                    ? "bg-white text-slate-950 shadow-sm font-black"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Platform & Plans</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("menu")}
+                className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  activeTab === "menu"
+                    ? "bg-white text-slate-950 shadow-sm font-black"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Utensils className="w-3.5 h-3.5 text-amber-500" />
+                <span>Live Menu Demo</span>
+              </button>
+            </div>
+            <a
+              href="#chef-ai"
+              onClick={() => {
+                if (activeTab !== "landing") setActiveTab("landing");
+              }}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Platform & Plans</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("menu")}
-              className={`px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                activeTab === "menu"
-                  ? "bg-white text-slate-950 shadow-sm font-black"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              <Bot className="w-3.5 h-3.5 text-amber-600" />
+              <span>Chef AI</span>
+            </a>
+            <a
+              href="#contact"
+              onClick={() => {
+                if (activeTab !== "landing") setActiveTab("landing");
+              }}
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 border border-slate-200 transition"
             >
-              <Utensils className="w-3.5 h-3.5 text-amber-500" />
-              <span>Live Menu Demo</span>
-            </button>
+              <Phone className="w-3.5 h-3.5 text-slate-500" />
+              <span>Contact & Support</span>
+            </a>
           </div>
 
           {/* Action CTAs */}
@@ -480,8 +533,22 @@ export default function App() {
       {activeTab === "landing" && (
         <div className="flex-1 flex flex-col">
           
-          {/* Hero Section (Clean Light Theme) */}
-          <section className="relative overflow-hidden py-16 lg:py-24 px-4 bg-gradient-to-b from-white via-amber-50/20 to-slate-50 border-b border-slate-200">
+          {/* ── Live Restaurant Operations Moving Ticker ── */}
+          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 py-2 overflow-hidden border-b border-amber-600 text-slate-950 font-bold text-xs select-none shadow-inner">
+            <div className="animate-marquee whitespace-nowrap flex items-center gap-10">
+              <span className="flex items-center gap-1.5">🍕 <strong className="font-black">Live KOT #104:</strong> Truffle Margherita dispatched to Table 02</span>
+              <span className="flex items-center gap-1.5">🍔 <strong className="font-black">Kitchen Display:</strong> Double Smash Angus Burger baking ready</span>
+              <span className="flex items-center gap-1.5">🍹 <strong className="font-black">Bar KOT:</strong> Passion Fruit Mint Cooler served at Table VIP-1</span>
+              <span className="flex items-center gap-1.5">⚡ <strong className="font-black">Avg Kitchen Prep Time:</strong> 9.4 mins across 14 branches</span>
+              <span className="flex items-center gap-1.5">🛵 <strong className="font-black">Delivery Dispatch:</strong> 4 Orders out with real-time tracking</span>
+              <span className="flex items-center gap-1.5">📱 <strong className="font-black">Instant QR Scan:</strong> 0 App downloads required for customers</span>
+            </div>
+          </div>
+
+          {/* Hero Section (Appetizing Restaurant Design with Floating Food) */}
+          <section className="relative overflow-hidden py-14 lg:py-20 px-4 bg-gradient-to-b from-amber-50/40 via-white to-slate-50 border-b border-slate-200">
+            {/* Ambient Background Warm Culinary Orbs */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-amber-400/20 via-orange-300/15 to-transparent rounded-full blur-3xl pointer-events-none" />
             <div className="max-w-5xl mx-auto text-center relative z-10">
               
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/70 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider mb-6">
@@ -522,6 +589,90 @@ export default function App() {
                   <Utensils className="w-4 h-4 text-amber-600" />
                   <span>Try Live Menu Demo</span>
                 </button>
+              </div>
+
+              {/* ── Floating Moving Food & Interactive Tabletop Stand Showcase ── */}
+              <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center max-w-5xl mx-auto">
+                
+                {/* Floating Food Card 1: Artisan Wood-Fired Pizza */}
+                <div className="animate-food-float bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-amber-200/90 shadow-xl shadow-amber-500/10 flex items-center gap-4 text-left hover:scale-102 transition-transform">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 shadow-md group">
+                    <img 
+                      src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=80" 
+                      alt="Artisan Pizza" 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute top-1 left-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-full">
+                      🔥 Hot
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase text-amber-600 tracking-wider">Wood-Fired Oven</span>
+                    <h4 className="font-black text-slate-900 text-sm">Truffle Margherita</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Baking at 450°C · 3 mins remaining</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs font-black text-slate-950">₹480</span>
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Auto KOT ⚡</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Center: Interactive Tabletop Stand Visualizer */}
+                <div className="animate-food-float-gentle bg-gradient-to-b from-slate-900 to-slate-950 text-white rounded-3xl p-5 border border-slate-800 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 rounded-full blur-2xl pointer-events-none" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-400">Tabletop Acrylic Stand</span>
+                    </div>
+                    <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full font-bold text-slate-300">TABLE 02</span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-3 text-slate-900 flex items-center justify-between gap-3 shadow-inner">
+                    <div className="w-14 h-14 bg-amber-50 rounded-xl p-1 border border-amber-200 flex items-center justify-center flex-shrink-0">
+                      <QrCode className="w-full h-full text-slate-950" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="text-xs font-black text-slate-900">Scan to Order</p>
+                      <p className="text-[10px] text-slate-500">Fast Kitchen Dispatch</p>
+                      <span className="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                        Dine-In · KOT Billing
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setActiveTab("menu")}
+                    className="mt-3 w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-md shadow-amber-500/20"
+                  >
+                    <span>Test Table 02 Live Order</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Floating Food Card 2: Gourmet Smash Burger & Craft Shake */}
+                <div className="animate-food-float-delayed bg-white/95 backdrop-blur-md rounded-3xl p-4 border border-amber-200/90 shadow-xl shadow-amber-500/10 flex items-center gap-4 text-left hover:scale-102 transition-transform">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 shadow-md group">
+                    <img 
+                      src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&auto=format&fit=crop&q=80" 
+                      alt="Gourmet Burger" 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute top-1 left-1 bg-emerald-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full">
+                      ★ 4.9
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase text-amber-600 tracking-wider">Kitchen Special</span>
+                    <h4 className="font-black text-slate-900 text-sm">Double Smash Burger</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Crispy Potato Brioche & Truffle Mayo</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs font-black text-slate-950">₹390</span>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">1,420+ Orders</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
 
               {/* Trust Features Bar */}

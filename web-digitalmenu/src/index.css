@@ -6,12 +6,12 @@
 @import './styles/responsive.css';
 
 :root {
-  --font-display: 'Cinzel', serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
   --font-serif: 'Playfair Display', serif;
   --font-body: 'Plus Jakarta Sans', sans-serif;
-  --gold: #c8971e;
-  --gold-light: #f5d485;
-  --obsidian: #0a0a0f;
+  --amber-primary: #d97706;
+  --amber-warm: #f59e0b;
+  --emerald-accent: #10b981;
 }
 
 html {
@@ -21,8 +21,8 @@ html {
 
 body {
   overflow-x: hidden;
-  background-color: #0a0a0f;
-  color: #f3f4f6;
+  background-color: #f8fafc;
+  color: #0f172a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -32,55 +32,93 @@ img {
   content-visibility: auto;
 }
 
-/* Make date inputs fully clickable - click anywhere to open calendar */
-input[type="date"] {
-  cursor: pointer;
-  position: relative;
-  padding-right: 2.5rem; /* Make room for calendar icon */
+/* ── Restaurant Moving Food & Floating Animations ── */
+@keyframes foodFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(2deg);
+  }
 }
 
-/* Style the calendar icon to be more prominent and clickable */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
-  opacity: 0.6;
-  z-index: 1;
+@keyframes foodFloatReverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(12px) rotate(-2deg);
+  }
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+@keyframes foodFloatGentle {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
 }
 
-/* For Firefox - make entire input clickable */
-input[type="date"]::-moz-focus-inner {
-  border: 0;
+@keyframes aromaSteam {
+  0% {
+    opacity: 0.3;
+    transform: translateY(0) scale(0.9);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(1.3);
+  }
 }
 
-/* Ensure pointer cursor on hover */
-input[type="date"]:hover {
-  cursor: pointer;
+@keyframes softGlow {
+  0%, 100% {
+    box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.25), 0 8px 10px -6px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 20px 35px -5px rgba(245, 158, 11, 0.4), 0 10px 12px -5px rgba(245, 158, 11, 0.25);
+  }
 }
 
-input[type="date"]:focus {
-  cursor: text; /* Allow text cursor when focused for editing */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
-/* When focused via click, show pointer to indicate calendar can open */
-input[type="date"]:focus:hover {
-  cursor: pointer;
+.animate-food-float {
+  animation: foodFloat 5s ease-in-out infinite;
 }
 
-.focus\:ring-amber-500:focus {
-  --tw-ring-opacity: 1;
-  --tw-ring-color: #0f5132;
+.animate-food-float-delayed {
+  animation: foodFloatReverse 6s ease-in-out 1s infinite;
 }
 
-.focus\:ring-amber-500:focus-visible {
-  --tw-ring-opacity: 1;
-  --tw-ring-color: #0f5132;
+.animate-food-float-gentle {
+  animation: foodFloatGentle 4s ease-in-out infinite;
+}
+
+.animate-aroma-steam {
+  animation: aromaSteam 2.5s ease-out infinite;
+}
+
+.animate-soft-glow {
+  animation: softGlow 3s ease-in-out infinite;
+}
+
+.animate-marquee {
+  display: flex;
+  width: 200%;
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
