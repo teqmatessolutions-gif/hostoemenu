@@ -11,6 +11,7 @@ export default function App() {
   const API = getApiBaseUrl();
   const MEDIA = getMediaBaseUrl();
 
+  const [showAiBubble, setShowAiBubble] = useState(true);
   // Contact & Sales Inquiry Form State (Dedicated Hosto eMenu)
   const [contactForm, setContactForm] = useState({
     restaurant_name: "",
@@ -698,6 +699,17 @@ export default function App() {
             </div>
           </section>
 
+          {/* ── Section: Interactive Chef AI Taste Sommelier & Animation Lab ── */}
+          <section id="chef-ai" className="py-12 px-4 max-w-6xl mx-auto w-full">
+            <ChefAiTasteMatcher
+              onSelectDish={(dish) => {
+                toast.success(`Selected "${dish.dish}"! Switching to Live Menu.`);
+                setActiveTab("menu");
+              }}
+              onExploreMenu={() => setActiveTab("menu")}
+            />
+          </section>
+
           {/* ── Feature Breakdown Section ── */}
           <section className="py-16 px-4 max-w-6xl mx-auto w-full">
             <div className="text-center mb-12">
@@ -834,6 +846,200 @@ export default function App() {
                   })}
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* ── Section: Dedicated Hosto eMenu Contact & Support (Independent from hospitality app) ── */}
+          <section id="contact" className="py-16 px-4 bg-gradient-to-b from-white to-amber-50/40 border-t border-slate-200">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <span className="text-xs font-black uppercase text-amber-700 tracking-widest bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
+                  Dedicated eMenu Support &amp; Sales
+                </span>
+                <h2 className="text-2xl sm:text-4xl font-black text-slate-900 mt-3">
+                  Get in Touch With the Hosto eMenu Team
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 mt-2">
+                  Dedicated product specialists for restaurants, cafes, cloud kitchens, and bar operations. Separate channel &amp; 24/7 dedicated assistance.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {/* Left: Contact Channels */}
+                <div className="space-y-4">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-amber-400 transition">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                      <Send className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-black text-slate-900 text-sm">Sales &amp; Enterprise Tiers</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Pricing, multi-outlet discounts &amp; custom features</p>
+                    <a href="mailto:sales@hostoemenu.com" className="text-xs font-bold text-amber-600 hover:underline mt-2 inline-block">
+                      sales@hostoemenu.com &rarr;
+                    </a>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-amber-400 transition">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-black text-slate-900 text-sm">Restaurant Helpdesk &amp; Support</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">KOT printer setup, QR stand re-prints, staff training</p>
+                    <a href="mailto:support@hostoemenu.com" className="text-xs font-bold text-emerald-600 hover:underline mt-2 inline-block">
+                      support@hostoemenu.com &rarr;
+                    </a>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-amber-400 transition">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                      <HeartHandshake className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-black text-slate-900 text-sm">Consultants &amp; Reseller Network</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">Earn recurring monthly revenue onboarding food businesses</p>
+                    <a href="mailto:partners@hostoemenu.com" className="text-xs font-bold text-indigo-600 hover:underline mt-2 inline-block">
+                      partners@hostoemenu.com &rarr;
+                    </a>
+                  </div>
+
+                  <a
+                    href="https://wa.me/919840012345?text=Hi%20Hosto%20eMenu%20team,%20I%20would%20like%20a%20demo%20for%20my%20restaurant"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl text-xs transition shadow-md shadow-emerald-600/20 active:scale-95"
+                  >
+                    <span>💬 Chat on WhatsApp (+91 98400 12345)</span>
+                  </a>
+                </div>
+
+                {/* Right: Dedicated Interactive Request Demo / Contact Form */}
+                <div className="lg:col-span-2 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-lg shadow-slate-100">
+                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900">Request Restaurant Demo or Setup Assistance</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Fill in your restaurant details and we will configure your menu and tabletop QRs.</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-black uppercase text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Dedicated eMenu Team</span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleContactSubmit} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Restaurant / Brand Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Amber Gourmet Bistro"
+                          value={contactForm.restaurant_name}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, restaurant_name: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Your Name *</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Rahul Sharma"
+                          value={contactForm.contact_name}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, contact_name: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Email Address *</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="e.g. rahul@amberbistro.com"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Phone / WhatsApp Number *</label>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="e.g. +91 98765 43210"
+                          value={contactForm.phone}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, phone: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Food Business Type</label>
+                        <select
+                          value={contactForm.outlet_type}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, outlet_type: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        >
+                          <option value="fine_dine">🍽️ Dine-in Restaurant / Bistro</option>
+                          <option value="cafe">☕ Cafe &amp; Bakery</option>
+                          <option value="qsr">⚡ Quick Service / Fast Food (QSR)</option>
+                          <option value="cloud_kitchen">🛵 Cloud Kitchen / Takeaway Outlet</option>
+                          <option value="bar_brewery">🍸 Bar, Pub &amp; Brewery</option>
+                          <option value="multi_chain">🏢 Multi-Branch Restaurant Chain</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-bold text-slate-700 block mb-1">Estimated Outlets / Branches</label>
+                        <select
+                          value={contactForm.branches_count}
+                          onChange={(e) => setContactForm(prev => ({ ...prev, branches_count: e.target.value }))}
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                        >
+                          <option value="1">Single Outlet (1 Branch)</option>
+                          <option value="2-5">2 to 5 Outlets</option>
+                          <option value="6-15">6 to 15 Outlets</option>
+                          <option value="15+">15+ Outlets (Enterprise)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="font-bold text-slate-700 block mb-1">How can we help? (Optional)</label>
+                      <textarea
+                        rows="3"
+                        placeholder="e.g. We have 24 dining tables and need KOT thermal printer integration and digital QR ordering..."
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm(prev => ({ ...prev, message: e.target.value }))}
+                        className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium resize-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2">
+                      <p className="text-[11px] text-slate-400">
+                        🔒 Zero spam. Official Hosto eMenu representative will connect directly.
+                      </p>
+                      <button
+                        type="submit"
+                        disabled={contactSubmitting}
+                        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black px-6 py-3 rounded-xl shadow-md shadow-amber-500/20 active:scale-95 transition text-xs tracking-wider uppercase flex items-center gap-2"
+                      >
+                        {contactSubmitting ? (
+                          <span>Submitting...</span>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Submit Request</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+              </div>
             </div>
           </section>
 
@@ -1378,6 +1584,38 @@ export default function App() {
           </div>
         </div>
       </footer>
+      {/* ── Floating Interactive Chef AI Assistant Bot ── */}
+      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+        {showAiBubble && (
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-amber-300 shadow-2xl text-xs max-w-xs text-slate-800 animate-bounce flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5">
+              <span>✨</span>
+              <span>Ask <strong>Chef AI</strong> for taste pairings!</span>
+            </span>
+            <button 
+              onClick={() => setShowAiBubble(false)} 
+              className="text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => {
+            if (activeTab !== "landing") setActiveTab("landing");
+            const el = document.getElementById("chef-ai");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+          className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-600 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/50 hover:scale-110 active:scale-95 transition-all group"
+          title="Open Chef AI Taste Matcher"
+        >
+          <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl blur-md opacity-50 group-hover:opacity-80 transition duration-500 animate-pulse" />
+          <Bot className="w-7 h-7 relative z-10 text-slate-950" />
+          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-ping" />
+        </button>
+      </div>
     </div>
   );
 }
