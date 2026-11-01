@@ -22,7 +22,7 @@ const SERVICES = [
   { emoji: "🧳", label: "Luggage Help", desc: "Luggage storage, porter & checkout assistance", color: "#ec4899" },
 ];
 
-export default function GuestRoomPortal({ roomId, tableId, isMenuOnly }) {
+export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId }) {
   const [room, setRoom] = useState(null);
   const [branch, setBranch] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +61,14 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly }) {
       const resp2 = await fetch(`${API}/public/branches`);
       if (resp2.ok) {
         const brs = await resp2.json();
-        if (brs && brs.length > 0) setBranch(brs[0]);
+        if (brs && brs.length > 0) {
+          if (branchId) {
+            const matched = brs.find(b => b.id.toString() === branchId.toString());
+            setBranch(matched || brs[0]);
+          } else {
+            setBranch(brs[0]);
+          }
+        }
       }
     } catch (e) {
       console.error("GuestPortal: branch fetch error", e);
@@ -73,16 +80,18 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly }) {
     fetchRoomData(); 
   }, [fetchRoomData]);
 
-  // Fetch food items and categories
+  // Fetch food items and categories scoped to branch
   useEffect(() => {
     const fetchFoodData = async () => {
       try {
-        const itemsResp = await fetch(`${API}/public/food-items`);
+        const targetBranchId = branchId || branch?.id;
+        const branchParam = targetBranchId ? `?branch_id=${targetBranchId}` : "";
+        const itemsResp = await fetch(`${API}/public/food-items${branchParam}`);
         if (itemsResp.ok) {
           const itemsData = await itemsResp.json();
           setFoodItems(itemsData);
         }
-        const catsResp = await fetch(`${API}/public/food-categories`);
+        const catsResp = await fetch(`${API}/public/food-categories${branchParam}`);
         if (catsResp.ok) {
           const catsData = await catsResp.json();
           setFoodCategories(catsData);
@@ -92,7 +101,7 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly }) {
       }
     };
     fetchFoodData();
-  }, [API]);
+  }, [API, branchId, branch?.id]);
 
   const handleCall = (number) => { window.location.href = `tel:${number}`; };
 
@@ -218,9 +227,11 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly }) {
       }
     });
 
+    const targetBranchId = branchId ? parseInt(branchId) : (branch?.id ? parseInt(branch?.id) : null);
     const payload = {
       room_id: roomId ? parseInt(roomId) : null,
       table_id: tableNumber ? parseInt(tableNumber) : null,
+      branch_id: targetBranchId,
       amount: subtotal,
       order_type: foodOrderType,
       delivery_request: foodOrderType === "room_service" ? deliveryRequest : (deliveryRequest ? `Table: ${tableNumber} - ${deliveryRequest}` : `Table: ${tableNumber}`),

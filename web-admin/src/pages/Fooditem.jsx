@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../layout/DashboardLayout";
 import API from "../services/api";
+import { useBranch } from "../contexts/BranchContext";
 import { normalizeQuantity } from "../utils/quantityValidation";
 import { ChefHat, Plus, X, ChevronDown, ChevronUp, Clock, IndianRupee } from "lucide-react";
 
@@ -21,6 +22,7 @@ const bgColors = [
 ];
 
 const FoodItems = () => {
+  const { activeBranchId, activeBranch } = useBranch();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
@@ -53,7 +55,7 @@ const FoodItems = () => {
     fetchCategories();
     fetchFoodItems();
     fetchInventoryItems();
-  }, []);
+  }, [activeBranchId]);
 
   useEffect(() => {
     if (name && !recipeName && !editingItemId) {
@@ -321,6 +323,11 @@ const FoodItems = () => {
             <h2 className="text-2xl font-black mb-6 text-slate-800 text-center md:text-left flex items-center gap-3">
               <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
               {editingItemId ? "Edit Food Item" : "Create New Food Item"}
+              {activeBranch && (
+                <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 ml-auto">
+                  Branch: {activeBranch.name}
+                </span>
+              )}
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

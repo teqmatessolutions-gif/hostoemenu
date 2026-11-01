@@ -300,16 +300,16 @@ def create_public_food_order(order_data: FoodOrderCreate, db: Session = Depends(
         from app.models.room import Room
         from app.models.restaurant_table import RestaurantTable
         
-        # Resolve branch_id from room or table
-        branch_id = 1 # Fallback
-        if order_data.room_id:
-            room = db.query(Room).filter(Room.id == order_data.room_id).first()
-            if room:
-                branch_id = room.branch_id
-        elif order_data.table_id:
+        # Resolve branch_id from order_data, table, or room
+        branch_id = getattr(order_data, 'branch_id', None) or 1
+        if order_data.table_id:
             table = db.query(RestaurantTable).filter(RestaurantTable.id == order_data.table_id).first()
-            if table:
+            if table and table.branch_id:
                 branch_id = table.branch_id
+        elif order_data.room_id:
+            room = db.query(Room).filter(Room.id == order_data.room_id).first()
+            if room and room.branch_id:
+                branch_id = room.branch_id
                 
         new_order = food_order_crud.create_food_order(db, order_data, branch_id=branch_id)
         return new_order

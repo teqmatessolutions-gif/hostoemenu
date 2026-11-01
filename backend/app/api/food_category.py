@@ -26,6 +26,28 @@ def create_category(name: str = Form(...), image: UploadFile = File(None), db: S
         with open(path, "wb") as buffer:
             shutil.copyfileobj(image.file, buffer)
     
+    if branch_id is None:
+        if current_user.branch_id is not None:
+            branch_id = current_user.branch_id
+        else:
+            from app.models.branch import Branch
+            first_branch = db.query(Branch).filter(Branch.is_active == True).first()
+            if not first_branch:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="No active branch found. Please create a branch first.")
+            branch_id = first_branch.id
+
+    if branch_id is None:
+        if current_user.branch_id is not None:
+            branch_id = current_user.branch_id
+        else:
+            from app.models.branch import Branch
+            first_branch = db.query(Branch).filter(Branch.is_active == True).first()
+            if not first_branch:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="No active branch found. Please create a branch first.")
+            branch_id = first_branch.id
+
     category = FoodCategory(name=name, image=filename, branch_id=branch_id)
     db.add(category)
     db.commit()

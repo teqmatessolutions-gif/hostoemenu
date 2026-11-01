@@ -20,6 +20,7 @@ class FoodOrderCreate(BaseModel):
     booking_id: Optional[int] = None
     package_booking_id: Optional[int] = None
     apply_gst: Optional[bool] = None  # Explicit toggle: with GST (True) or without GST (False)
+    branch_id: Optional[int] = None
 
 class FoodOrderItemOut(BaseModel):
     id: int
@@ -73,3 +74,4 @@ class FoodOrderUpdate(BaseModel):
     delivery_request: Optional[str] = None
     items: Optional[List[FoodOrderItemCreate]] = None
     apply_gst: Optional[bool] = None  # Explicit toggle: with GST (True) or without GST (False)
+    branch_id: Optional[int] = None

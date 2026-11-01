@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import DashboardLayout from "../layout/DashboardLayout";
 import API from "../services/api";
+import { useBranch } from "../contexts/BranchContext";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 
@@ -20,6 +21,7 @@ const KpiCard = ({ title, value, icon, color }) => (
 );
 
 const FoodManagement = () => {
+  const { activeBranchId, activeBranch } = useBranch();
   // === State for UI/UX enhancements ===
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -61,7 +63,7 @@ const FoodManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeBranchId]);
 
   const fetchCategories = async () => {
     try {
@@ -297,7 +299,23 @@ const FoodManagement = () => {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-12">
-        <h1 className="text-3xl font-bold text-gray-800">Food & Beverage Management</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-3xl font-bold text-gray-800">Food & Beverage Management</h1>
+          {activeBranch && (
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold border border-indigo-100 shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Branch: {activeBranch.name}
+            </span>
+          )}
+        </div>
+          {activeBranch && (
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-sm font-semibold border border-indigo-100 shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Branch: {activeBranch.name}
+            </span>
+          )}
+        </div>
         {error && <div className="p-4 mb-4 text-center text-red-700 bg-red-100 border border-red-200 rounded-lg">{error}</div>}
 
         {/* KPI Section */}

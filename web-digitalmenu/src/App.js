@@ -2989,16 +2989,34 @@ export default function App() {
     const priceStyle = `font-bold text-xl ${theme.textAccent} tracking-wider`;
     const buttonStyle = `mt-4 inline-flex items-center text-sm font-semibold ${theme.textAccent} hover:text-white transition duration-300`;
 
+    const currentHash = window.location.hash || '';
+    const queryStr = window.location.search || (currentHash.includes('?') ? '?' + currentHash.split('?')[1] : '');
+    const urlParams = new URLSearchParams(queryStr);
+    const queryBranchId = urlParams.get('branch_id');
+
+    if (currentPath.startsWith('#/branch/')) {
+        const parts = currentPath.replace('#/branch/', '').split('/');
+        const pathBranchId = parts[0];
+        if (parts[1] === 'table' && parts[2]) {
+            const tableId = parts[2].split('?')[0];
+            return <GuestRoomPortal branchId={pathBranchId} tableId={tableId} />;
+        }
+        if (parts[1] === 'room' && parts[2]) {
+            const roomId = parts[2].split('?')[0];
+            return <GuestRoomPortal branchId={pathBranchId} roomId={roomId} />;
+        }
+        return <GuestRoomPortal branchId={pathBranchId} isMenuOnly={true} />;
+    }
     if (currentPath.startsWith('#/room/')) {
-        const roomId = currentPath.replace('#/room/', '');
-        return <GuestRoomPortal roomId={roomId} />;
+        const roomId = currentPath.replace('#/room/', '').split('?')[0];
+        return <GuestRoomPortal roomId={roomId} branchId={queryBranchId} />;
     }
     if (currentPath.startsWith('#/table/')) {
         const tableId = currentPath.replace('#/table/', '').split('?')[0];
-        return <GuestRoomPortal tableId={tableId} />;
+        return <GuestRoomPortal tableId={tableId} branchId={queryBranchId} />;
     }
     if (currentPath.startsWith('#/menu') || currentPath.startsWith('#/order') || currentPath.startsWith('#/food')) {
-        return <GuestRoomPortal isMenuOnly={true} />;
+        return <GuestRoomPortal isMenuOnly={true} branchId={queryBranchId} />;
     }
 
     if (loading) {

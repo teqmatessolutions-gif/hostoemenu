@@ -48,6 +48,17 @@ def _create_item_impl(
             # Store with leading slash for proper URL construction
             image_paths.append(f"/uploads/food_items/{filename}")
 
+    if branch_id is None:
+        if current_user.branch_id is not None:
+            branch_id = current_user.branch_id
+        else:
+            from app.models.branch import Branch
+            first_branch = db.query(Branch).filter(Branch.is_active == True).first()
+            if not first_branch:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=400, detail="No active branch found. Please create a branch first.")
+            branch_id = first_branch.id
+
     item_data = FoodItemCreate(
         name=name, description=description, price=price,
         available=available, category_id=category_id,
