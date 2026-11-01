@@ -1,4 +1,4 @@
-# Multi-Branch SaaS Digital Menu (Web & Mobile)
+# Hosto eMenu — Multi-Branch SaaS Digital Menu (Web & Mobile)
 
 A multi-tenant, multi-branch SaaS Digital Menu, Kitchen Order Ticket (KOT), and POS Billing platform for restaurants, resorts, cafes, and multi-outlet food chains. 
 

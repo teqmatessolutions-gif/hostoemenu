@@ -213,7 +213,7 @@ export default function SaasPlanEditor() {
               </h1>
             </div>
             <p className="text-xs sm:text-sm text-gray-500">
-              Configure subscription tiers, pricing, branch limits, and features. Changes instantly reflect on the public digital menu portal.
+              Configure subscription tiers, pricing, branch limits, and features. Changes instantly reflect on the public Hosto eMenu portal.
             </p>
           </div>
 
@@ -300,7 +300,7 @@ export default function SaasPlanEditor() {
                     </div>
 
                     <p className="text-xs text-gray-500 mt-2 min-h-[32px] line-clamp-2">
-                      {plan.description || "Comprehensive multi-branch digital menu and KOT solution."}
+                      {plan.description || "Comprehensive multi-branch Hosto eMenu and KOT solution."}
                     </p>
 
                     {/* Pricing */}
@@ -634,3 +634,4 @@ export default function SaasPlanEditor() {
     </DashboardLayout>
   );
 }
+

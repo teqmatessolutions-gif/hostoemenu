@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
-import hostoLogo from "../assets/stayonelogo.png";
+import hostoLogo from "../assets/hosto-emenu-logo.png";
 import { jwtDecode } from "jwt-decode";
 import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, ShieldCheck, Clock, AlertCircle, TrendingUp, Zap, Radio, Globe } from "lucide-react";
 

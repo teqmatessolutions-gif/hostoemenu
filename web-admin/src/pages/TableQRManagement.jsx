@@ -25,7 +25,7 @@ export default function TableQRManagement() {
     });
 
     const currentBranch = activeBranch || branches.find(b => b.id.toString() === activeBranchId?.toString()) || (branches.length > 0 ? branches[0] : null);
-    const branchName = currentBranch?.name || "Digital Restaurant";
+    const branchName = currentBranch?.name || "Hosto eMenu";
     const branchId = currentBranch?.id || activeBranchId;
 
     const getCustomerMenuBase = () => {
@@ -221,7 +221,7 @@ export default function TableQRManagement() {
                     <div class="qr-wrapper">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(tableUrl)}&format=svg" width="220" height="220" alt="QR Code" />
                     </div>
-                    <div class="cta-text">SCAN FOR DIGITAL MENU</div>
+                    <div class="cta-text">SCAN FOR HOSTO EMENU</div>
                     <div class="sub-text">Point phone camera to view full menu and order instantly</div>
                     <div class="features-pill">
                         <span>🍽️ Dine-in</span> • <span>🛵 Delivery</span> • <span>🛏️ Room Svc</span>

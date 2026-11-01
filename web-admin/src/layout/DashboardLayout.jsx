@@ -27,7 +27,8 @@ import {
   QrCode,
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
-import hostoLogo from "../assets/stayonelogo.png";
+import hostoLogo from "../assets/hosto-emenu-logo.png";
+import HostoLogo from "../components/HostoLogo";
 import { NotificationBell } from "../contexts/NotificationContext";
 import { useBranch } from "../contexts/BranchContext";
 import { Building2, ChevronDown } from "lucide-react";

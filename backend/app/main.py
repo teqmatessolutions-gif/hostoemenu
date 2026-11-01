@@ -108,7 +108,7 @@ from app.utils.auth import get_db
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Resort Management System",
+    title="Hosto eMenu API",
     description="Complete resort management system with booking, payments, and customer management",
     version="1.0.0",
 )

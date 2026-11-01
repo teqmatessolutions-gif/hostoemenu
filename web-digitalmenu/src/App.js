@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";
+import HostoLogo from "./components/HostoLogo";
 
 export default function App() {
   const API = getApiBaseUrl();
@@ -316,7 +317,7 @@ export default function App() {
       deliveryAddress,
       grandTotal,
       items: [...cartItemsList],
-      branchName: currentBranch?.name || "Digital Menu",
+      branchName: currentBranch?.name || "Hosto eMenu",
       branchPhone: currentBranch?.phone || ""
     };
 
@@ -399,20 +400,13 @@ export default function App() {
           
           {/* Brand Logo & Tagline */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-400 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20">
-              <QrCode className="w-5 h-5 text-slate-950" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-lg md:text-xl tracking-tight text-slate-900 flex items-center">
-                  Digital<span className="text-amber-600">Menu</span>
-                </span>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 tracking-wider">
-                  SaaS Multi-Branch
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
-                Tabletop QR Stand Ordering · Live KOT Dispatch · Multi-Branch POS
+            <HostoLogo size="md" />
+            <div className="hidden lg:block border-l border-slate-200 pl-3">
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 tracking-wider">
+                Multi-Branch SaaS
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Tabletop QR Stand · Live KOT Dispatch · Cloud POS
               </p>
             </div>
           </div>
@@ -492,7 +486,7 @@ export default function App() {
               
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/70 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider mb-6">
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                Next-Gen Multi-Branch Digital Menu SaaS
+                Next-Gen Multi-Branch Hosto eMenu SaaS
               </div>
 
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight max-w-4xl mx-auto">
@@ -500,7 +494,7 @@ export default function App() {
               </h1>
 
               <p className="mt-5 text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-                Empower your restaurant, cafe, or hotel chain. Instant tabletop QR menus, live KOT dispatch to kitchen, GST billing, and multi-branch company management — in one unified cloud system.
+                Empower your restaurants, cafes, and hospitality chains with Hosto eMenu. Instant tabletop QR menus, live KOT dispatch to kitchen, GST billing, and multi-branch company management — in one unified cloud system.
               </p>
 
               {/* Action Buttons */}
@@ -706,7 +700,7 @@ export default function App() {
                 Grow With Us as a Technology Partner
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mt-3 max-w-xl mx-auto leading-relaxed">
-                Are you a food consultant, restaurant agency, or hospitality provider? Onboard your restaurant clients onto DigitalMenu SaaS and earn recurring partner commissions.
+                Are you a food consultant, restaurant agency, or hospitality provider? Onboard your restaurant clients onto Hosto eMenu SaaS and earn recurring partner commissions.
               </p>
               <button
                 onClick={() => setShowPartnerModal(true)}
@@ -849,7 +843,7 @@ export default function App() {
             {loadingMenu ? (
               <div className="py-20 text-center">
                 <div className="w-10 h-10 border-4 border-amber-400 border-t-amber-600 rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-xs text-slate-500">Loading digital menu dishes...</p>
+                <p className="text-xs text-slate-500">Loading Hosto eMenu dishes...</p>
               </div>
             ) : filteredItems.length === 0 ? (
               <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
@@ -1091,7 +1085,7 @@ export default function App() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-3 border border-amber-200">
                 <HeartHandshake className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black text-slate-900">Join DigitalMenu SaaS</h3>
+              <h3 className="text-xl font-black text-slate-900">Join Hosto eMenu SaaS</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Register your restaurant business or join as a partner network provider.
               </p>
@@ -1224,13 +1218,18 @@ export default function App() {
       )}
 
       {/* ── Universal Light Footer ── */}
-      <footer className="mt-auto bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        <p className="font-semibold text-slate-700">
-          Powered by DigitalMenu SaaS · Multi-Branch Digital Menu, QR Ordering & Kitchen POS
-        </p>
-        <p className="mt-1 text-[11px] text-slate-400">
-          Join with our plan or register as a partner · Instant tabletop tent QR generation
-        </p>
+      <footer className="mt-auto bg-white border-t border-slate-200 py-6 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <HostoLogo size="sm" />
+          <div className="text-center sm:text-right">
+            <p className="font-semibold text-slate-700">
+              Powered by Hosto eMenu SaaS · Multi-Branch QR Ordering & Kitchen POS
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              Join with our plan or register as a partner · Instant tabletop QR stands
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );
