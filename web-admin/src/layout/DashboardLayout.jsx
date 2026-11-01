@@ -303,6 +303,7 @@ export default function DashboardLayout({ children }) {
     { label: "Day Audit", icon: <CalendarCheck size={18} />, to: "/day-audit" },
     { label: "Settings", icon: <Settings size={18} />, to: "/settings" },
     ...(isSuper ? [{ label: "Branch Mgt", icon: <Building2 size={18} />, to: "/branch-management" }] : []),
+    ...(isSuper ? [{ label: "SaaS Plan Editor", icon: <CreditCard size={18} />, to: "/saas-plan-editor" }] : []), 
     { label: "Activity Logs", icon: <Activity size={18} />, to: "/activity-logs" },
   ];
 

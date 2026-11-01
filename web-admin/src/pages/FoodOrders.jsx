@@ -2725,7 +2725,7 @@ export default function FoodOrders() {
                       <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                         <label className="block text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
                           <Truck size={16} />
-                          {orderType === "delivery" ? "Delivery Address & Contact Details" : "Delivery Instructions (Optional)}
+                          {orderType === "delivery" ? "Delivery Address & Contact Details" : "Delivery Instructions (Optional)"}
                         </label>
                         <textarea
                           placeholder="Add delivery instructions, timing preferences, or special notes..."

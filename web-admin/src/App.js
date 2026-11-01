@@ -36,6 +36,7 @@ import ActivityLogs from "./pages/ActivityLogs.jsx";
 import Laundry from "./pages/Laundry.jsx";
 import DayAudit from "./pages/DayAudit.jsx";
 import SubscriptionBilling from "./pages/SubscriptionBilling.jsx";
+import SaasPlanEditor from "./pages/SaasPlanEditor.jsx";
 
 const getRouterBasename = () => {
   if (typeof window === "undefined") {
@@ -321,6 +322,14 @@ function App() {
               }
             />
             {/* Fallback Catch-All Route: Redirect to Login */}
+            <Route
+              path="/saas-plan-editor"
+              element={
+                <ProtectedRoute superAdminOnly={true}>
+                  <SaasPlanEditor />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster position="top-right" />
