@@ -24,6 +24,7 @@ import {
   Sun,
   Warehouse,
   Activity,
+  QrCode,
 } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import hostoLogo from "../assets/stayonelogo.png";
@@ -124,6 +125,8 @@ const routeToModuleMap = {
   "/rooms": "rooms",
   "/services": ["services", "concierge"],
   "/food-orders": "food_orders",
+  "/table-qr": ["food_orders", "restaurant_tables"],
+  "/tables": ["food_orders", "restaurant_tables"],
   "/food-orders/orders": "food_orders_list",
   "/food-orders/requests": "food_orders_requests",
   "/food-orders/management": "food_orders_management",
@@ -289,6 +292,7 @@ export default function DashboardLayout({ children }) {
     { label: "Services", icon: <ConciergeBell size={18} />, to: "/services" },
     { label: "Expenses", icon: <PiggyBank size={18} />, to: "/expenses" },
     { label: "Food Management", icon: <Grid size={18} />, to: "/food-orders" },
+    { label: "Table & QR Codes", icon: <QrCode size={18} />, to: "/table-qr" },
     { label: "Billing", icon: <Receipt size={18} />, to: "/billing" },
     { label: "Monthly Bill & Plan", icon: <CreditCard size={18} />, to: "/subscription" },
     { label: "WEB Management", icon: <Globe size={18} />, to: "/Userfrontend_data" },

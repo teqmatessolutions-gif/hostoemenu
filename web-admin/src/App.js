@@ -17,6 +17,7 @@ import Users from "./pages/Users.jsx";
 import Services from "./pages/Services.jsx";
 import Expenses from "./pages/Expenses.jsx";
 import FoodOrder from "./pages/FoodOrders.jsx";
+import TableQRManagement from "./pages/TableQRManagement.jsx";
 import FoodCategory from "./pages/FoodCategory.jsx";
 import FoodItem from "./pages/Fooditem.jsx";
 import Billing from "./pages/Billing.jsx";
@@ -140,6 +141,22 @@ function App() {
               element={
                 <ProtectedRoute requiredPermission="/food-orders">
                   <FoodOrder />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/table-qr"
+              element={
+                <ProtectedRoute requiredPermission="/food-orders">
+                  <TableQRManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tables"
+              element={
+                <ProtectedRoute requiredPermission="/food-orders">
+                  <TableQRManagement />
                 </ProtectedRoute>
               }
             />
