@@ -37,6 +37,10 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
   const [foodOrderType, setFoodOrderType] = useState(() => (tableId || isMenuOnly ? "dine_in" : "room_service"));
   const [deliveryRequest, setDeliveryRequest] = useState("");
   const [tableNumber, setTableNumber] = useState(() => tableId || "");
+  const [deliveryName, setDeliveryName] = useState("");
+  const [deliveryPhone, setDeliveryPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [roomNumberInput, setRoomNumberInput] = useState(() => roomId || "");
   const [foodSearch, setFoodSearch] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("all");
   const [checkoutStep, setCheckoutStep] = useState(false);
@@ -228,13 +232,23 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
     });
 
     const targetBranchId = branchId ? parseInt(branchId) : (branch?.id ? parseInt(branch?.id) : null);
+    let formattedDeliveryRequest = "";
+    if (foodOrderType === "dine_in") {
+      formattedDeliveryRequest = deliveryRequest ? `Table ${tableNumber}: ${deliveryRequest}` : `Table ${tableNumber}`;
+    } else if (foodOrderType === "delivery") {
+      formattedDeliveryRequest = `DELIVERY | Name: ${deliveryName || "Customer"} | Phone: ${deliveryPhone} | Address: ${deliveryAddress}${deliveryRequest ? ` | Notes: ${deliveryRequest}` : ""}`;
+    } else if (foodOrderType === "room_service") {
+      const rNum = roomNumberInput || roomId || room?.number || "";
+      formattedDeliveryRequest = deliveryRequest ? `Room ${rNum}: ${deliveryRequest}` : `Room ${rNum}`;
+    }
+
     const payload = {
-      room_id: roomId ? parseInt(roomId) : null,
-      table_id: tableNumber ? parseInt(tableNumber) : null,
+      room_id: foodOrderType === "room_service" && (roomNumberInput || roomId) ? parseInt(roomNumberInput || roomId) : null,
+      table_id: foodOrderType === "dine_in" && tableNumber ? parseInt(tableNumber) : null,
       branch_id: targetBranchId,
       amount: subtotal,
       order_type: foodOrderType,
-      delivery_request: foodOrderType === "room_service" ? deliveryRequest : (deliveryRequest ? `Table: ${tableNumber} - ${deliveryRequest}` : `Table: ${tableNumber}`),
+      delivery_request: formattedDeliveryRequest,
       items: items
     };
 
@@ -260,9 +274,11 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
         return `${name} x${item.quantity}`;
       }).join(", ");
       
-      const instructions = foodOrderType === "room_service" ? deliveryRequest : `Table: ${tableNumber}`;
+      const typeLabel = foodOrderType === "dine_in" 
+        ? `Dine-In (Table ${tableNumber})` 
+        : (foodOrderType === "delivery" ? `Delivery (${deliveryPhone})` : `Room Service (${roomNumberInput || roomId})`);
       const text = encodeURIComponent(
-        `[Room ${room?.number || roomId}] Food Order (${foodOrderType === "room_service" ? "Room Service" : "Dine-In"}): ${orderDetails}. Instructions: ${instructions}`
+        `[${branch?.name || "Digital Menu"}] Food Order (${typeLabel}): ${orderDetails}. Total: ₹${(subtotal * 1.05).toFixed(2)}. Details: ${formattedDeliveryRequest}`
       );
       if (phone) {
         window.open(`https://wa.me/91${phone}?text=${text}`, "_blank");
@@ -273,6 +289,9 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
     setCart({});
     setDeliveryRequest("");
     setTableNumber("");
+    setDeliveryName("");
+    setDeliveryPhone("");
+    setDeliveryAddress("");
     setCheckoutStep(false);
     setTimeout(() => {
       setMsgSent(false);
@@ -435,24 +454,45 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
             {resortName}
           </div>
           <h1 style={{ color: "white", fontSize: "2rem", fontFamily: "'Playfair Display', serif", fontWeight: 700, margin: "0 0 4px", lineHeight: 1.1 }}>
-            Room {roomNumber}
+            {tableId ? `Table ${tableNumber || tableId}` : (isMenuOnly ? (branch?.name || "Digital Restaurant") : `Room ${roomNumber}`)}
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "0.75rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.2em", margin: 0 }}>
-            {roomType}
+            {tableId ? "🍽️ Restaurant Dine-In" : (isMenuOnly ? "🍽️ Dine-In  •  🛵 Delivery  •  🛏️ Room Service" : roomType)}
           </p>
         </div>
 
-        {/* Quick icons */}
-        <div style={{ display: "flex", gap: "12px", padding: "20px 20px 0", position: "relative", zIndex: 1 }}>
+        {/* Quick Mode Selector: Dine-In, Delivery, Room Service */}
+        <div style={{ display: "flex", gap: "10px", padding: "20px 20px 0", position: "relative", zIndex: 1 }}>
           {[
-            { emoji: "🍽️", label: "Food" },
-            { emoji: "🛎️", label: "Service" },
-            { emoji: "📞", label: "Desk" },
-            { emoji: "💬", label: "Help" },
+            { emoji: "🍽️", label: "Dine-In", type: "dine_in" },
+            { emoji: "🛵", label: "Delivery", type: "delivery" },
+            { emoji: "🛏️", label: "Room Svc", type: "room_service" },
+            { emoji: "📞", label: "Contact", type: "call" },
           ].map(q => (
-            <div key={q.label} style={{ flex: 1, background: "rgba(255,255,255,0.08)", backdropFilter: "blur(8px)", borderRadius: "14px", padding: "10px 4px", textAlign: "center", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div style={{ fontSize: "1.4rem", marginBottom: "4px" }}>{q.emoji}</div>
-              <div style={{ color: "#cbd5e1", fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>{q.label}</div>
+            <div 
+              key={q.label} 
+              onClick={() => {
+                if (q.type === "call") {
+                  if (frontOfficePhone) handleCall(frontOfficePhone);
+                } else if (q.type) {
+                  setFoodOrderType(q.type);
+                  setActiveService(SERVICES[0]);
+                }
+              }}
+              style={{
+                flex: 1,
+                background: foodOrderType === q.type ? "rgba(99, 102, 241, 0.45)" : "rgba(255,255,255,0.08)",
+                backdropFilter: "blur(8px)",
+                borderRadius: "14px",
+                padding: "10px 4px",
+                textAlign: "center",
+                border: foodOrderType === q.type ? "1.5px solid #818cf8" : "1px solid rgba(255,255,255,0.12)",
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              <div style={{ fontSize: "1.3rem", marginBottom: "3px" }}>{q.emoji}</div>
+              <div style={{ color: foodOrderType === q.type ? "#ffffff" : "#cbd5e1", fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>{q.label}</div>
             </div>
           ))}
         </div>
@@ -668,39 +708,153 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
                     <button onClick={() => setCheckoutStep(false)} style={{ border: "none", background: "none", fontSize: "1.5rem", color: "#94a3b8", cursor: "pointer" }}>×</button>
                   </div>
 
-                  {/* Delivery Selection */}
-                  <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+                  {/* Order Mode Selection (Dine In | Delivery | Room Service) */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
                     <button 
-                      className={`grp-type-btn ${foodOrderType === "room_service" ? "active" : ""}`}
-                      onClick={() => setFoodOrderType("room_service")}
-                    >
-                      🛏️ Room Service
-                    </button>
-                    <button 
+                      type="button"
                       className={`grp-type-btn ${foodOrderType === "dine_in" ? "active" : ""}`}
                       onClick={() => setFoodOrderType("dine_in")}
+                      style={{
+                        padding: "10px 4px",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        borderRadius: "12px",
+                        border: foodOrderType === "dine_in" ? "2px solid #6366f1" : "2px solid #e2e8f0",
+                        background: foodOrderType === "dine_in" ? "#eff6ff" : "#ffffff",
+                        color: foodOrderType === "dine_in" ? "#4338ca" : "#64748b",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}
                     >
-                      🍽️ Dine-in Table
+                      <span style={{ fontSize: "1.2rem" }}>🍽️</span>
+                      <span>Dine-In</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      className={`grp-type-btn ${foodOrderType === "delivery" ? "active" : ""}`}
+                      onClick={() => setFoodOrderType("delivery")}
+                      style={{
+                        padding: "10px 4px",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        borderRadius: "12px",
+                        border: foodOrderType === "delivery" ? "2px solid #6366f1" : "2px solid #e2e8f0",
+                        background: foodOrderType === "delivery" ? "#eff6ff" : "#ffffff",
+                        color: foodOrderType === "delivery" ? "#4338ca" : "#64748b",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}
+                    >
+                      <span style={{ fontSize: "1.2rem" }}>🛵</span>
+                      <span>Delivery</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      className={`grp-type-btn ${foodOrderType === "room_service" ? "active" : ""}`}
+                      onClick={() => setFoodOrderType("room_service")}
+                      style={{
+                        padding: "10px 4px",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        borderRadius: "12px",
+                        border: foodOrderType === "room_service" ? "2px solid #6366f1" : "2px solid #e2e8f0",
+                        background: foodOrderType === "room_service" ? "#eff6ff" : "#ffffff",
+                        color: foodOrderType === "room_service" ? "#4338ca" : "#64748b",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "4px"
+                      }}
+                    >
+                      <span style={{ fontSize: "1.2rem" }}>🛏️</span>
+                      <span>Room Svc</span>
                     </button>
                   </div>
 
-                  {/* Delivery Option Details */}
-                  {foodOrderType === "room_service" ? (
-                    <textarea
-                      placeholder="Delivery instructions (e.g. bring extra glasses, deliver after 30 mins)..."
-                      value={deliveryRequest}
-                      onChange={e => setDeliveryRequest(e.target.value)}
-                      rows={2}
-                      style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "14px", padding: "12px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", resize: "none", outline: "none", boxSizing: "border-box", marginBottom: "16px" }}
-                    />
-                  ) : (
-                    <input 
-                      type="number"
-                      placeholder="Restaurant Table Number *"
-                      value={tableNumber}
-                      onChange={e => setTableNumber(e.target.value)}
-                      style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "12px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "16px" }}
-                    />
+                  {/* Mode-Specific Details */}
+                  {foodOrderType === "dine_in" && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <input 
+                        type="number"
+                        placeholder="Table Number (e.g. 5) *"
+                        value={tableNumber}
+                        onChange={e => setTableNumber(e.target.value)}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "12px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
+                        required
+                      />
+                      <textarea
+                        placeholder="Special instructions for kitchen (e.g. less spicy, extra plates)..."
+                        value={deliveryRequest}
+                        onChange={e => setDeliveryRequest(e.target.value)}
+                        rows={2}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "14px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", resize: "none", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  )}
+
+                  {foodOrderType === "delivery" && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <input 
+                        type="text"
+                        placeholder="Customer Full Name *"
+                        value={deliveryName}
+                        onChange={e => setDeliveryName(e.target.value)}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
+                        required
+                      />
+                      <input 
+                        type="tel"
+                        placeholder="Phone / WhatsApp Number *"
+                        value={deliveryPhone}
+                        onChange={e => setDeliveryPhone(e.target.value)}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
+                        required
+                      />
+                      <textarea 
+                        placeholder="Delivery Address & Landmark *"
+                        value={deliveryAddress}
+                        onChange={e => setDeliveryAddress(e.target.value)}
+                        rows={2}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "8px", resize: "none" }}
+                        required
+                      />
+                      <input 
+                        type="text"
+                        placeholder="Delivery notes (e.g. call upon arrival)..."
+                        value={deliveryRequest}
+                        onChange={e => setDeliveryRequest(e.target.value)}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
+                  )}
+
+                  {foodOrderType === "room_service" && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <input 
+                        type="text"
+                        placeholder="Room Number (e.g. 102) *"
+                        value={roomNumberInput}
+                        onChange={e => setRoomNumberInput(e.target.value)}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "12px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
+                        required
+                      />
+                      <textarea
+                        placeholder="Special delivery instructions (e.g. extra glasses, deliver after 20 mins)..."
+                        value={deliveryRequest}
+                        onChange={e => setDeliveryRequest(e.target.value)}
+                        rows={2}
+                        style={{ width: "100%", border: "2px solid #e2e8f0", borderRadius: "14px", padding: "10px 14px", fontFamily: "'Montserrat', sans-serif", fontSize: "0.8rem", color: "#1e293b", resize: "none", outline: "none", boxSizing: "border-box" }}
+                      />
+                    </div>
                   )}
 
                   {/* Bill calculation details */}
@@ -730,8 +884,21 @@ export default function GuestRoomPortal({ roomId, tableId, isMenuOnly, branchId 
                     <button 
                       className="grp-call-btn" 
                       onClick={handlePlaceFoodOrder}
-                      disabled={foodOrderType === "dine_in" && !tableNumber}
-                      style={{ flex: 2, background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "white", opacity: (foodOrderType === "dine_in" && !tableNumber) ? 0.6 : 1 }}
+                      disabled={
+                        (foodOrderType === "dine_in" && !tableNumber) ||
+                        (foodOrderType === "delivery" && (!deliveryPhone || !deliveryAddress)) ||
+                        (foodOrderType === "room_service" && !(roomNumberInput || roomId))
+                      }
+                      style={{
+                        flex: 2,
+                        background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+                        color: "white",
+                        opacity: (
+                          (foodOrderType === "dine_in" && !tableNumber) ||
+                          (foodOrderType === "delivery" && (!deliveryPhone || !deliveryAddress)) ||
+                          (foodOrderType === "room_service" && !(roomNumberInput || roomId))
+                        ) ? 0.6 : 1
+                      }}
                     >
                       Confirm & Order 🚀
                     </button>

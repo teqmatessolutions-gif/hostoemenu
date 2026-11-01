@@ -231,8 +231,8 @@ def create_food_order(db: Session, order_data: FoodOrderCreate, branch_id: int):
     # However, for now, we will trust the backend calculation if amount is not provided or different.
     final_amount = calculated_amount if (order_data.amount is None or order_data.amount == 0) else order_data.amount
     
-    # If amount is 0, force to room_service
-    if final_amount == 0:
+    # Preserve order_type if passed, default to room_service only if complimentary and unassigned
+    if final_amount == 0 and not getattr(order_data, 'order_type', None):
         order_type = 'room_service'
 
     # Try to link to a booking if not provided

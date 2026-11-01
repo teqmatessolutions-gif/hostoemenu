@@ -1532,7 +1532,7 @@ export default function FoodOrders() {
     const roomData = rooms.find((r) => r.id === order.room_id);
     const roomNumber = roomData?.number || roomData?.room_number || order.room_number || (order.room_id ? `Room ${order.room_id}` : null);
     const tableNum = order.table_number || order.table_id || "Dine-in";
-    const targetDisplay = order.order_type === 'dine_in' ? `Table: ${tableNum}` : (roomNumber ? `Room: ${roomNumber}` : 'Counter / Takeaway');
+    const targetDisplay = order.order_type === 'dine_in' ? `Table: ${tableNum}` : (order.order_type === 'delivery' ? `Delivery: ${order.delivery_request ? order.delivery_request.replace('DELIVERY | ', '').split('|')[0].trim() : 'Doorstep Delivery'}` : (roomNumber ? `Room: ${roomNumber}` : 'Room Service'));
     const branchTitle = currentBranch?.name || 'DIGITAL MENU RESTAURANT';
     const printWindow = window.open("", "_blank", "width=420,height=600");
 
@@ -1599,7 +1599,7 @@ export default function FoodOrders() {
     const roomData = rooms.find((r) => r.id === order.room_id);
     const roomNumber = roomData?.number || roomData?.room_number || order.room_number || (order.room_id ? `Room ${order.room_id}` : null);
     const tableNum = order.table_number || order.table_id || "Dine-in";
-    const targetDisplay = order.order_type === 'dine_in' ? `Table: ${tableNum}` : (roomNumber ? `Room: ${roomNumber}` : 'Takeaway / Counter');
+    const targetDisplay = order.order_type === 'dine_in' ? `Table: ${tableNum}` : (order.order_type === 'delivery' ? `Delivery: ${order.delivery_request ? order.delivery_request.replace('DELIVERY | ', '').split('|')[0].trim() : 'Doorstep Delivery'}` : (roomNumber ? `Room: ${roomNumber}` : 'Room Service'));
     const branchTitle = currentBranch?.name || 'DIGITAL MENU RESTAURANT';
     const branchGst = currentBranch?.gst_number || '';
     const branchAddr = currentBranch?.address || '';
@@ -1953,6 +1953,7 @@ export default function FoodOrders() {
                   >
                     <option value="all">All Types</option>
                     <option value="dine_in">Dine In</option>
+                    <option value="delivery">Delivery</option>
                     <option value="room_service">Room Service</option>
                   </select>
                 </div>
@@ -2672,7 +2673,7 @@ export default function FoodOrders() {
                     {/* Order Type Selection */}
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-3">Order Type *</label>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-3">
                         <button
                           type="button"
                           onClick={() => {
@@ -2680,13 +2681,27 @@ export default function FoodOrders() {
                             setDeliveryRequest("");
                             calculateAmount(selectedItems, "dine_in");
                           }}
-                          className={`flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all ${orderType === "dine_in"
+                          className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "dine_in"
                             ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
                             : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
                             }`}
                         >
-                          <UtensilsCrossed size={20} />
-                          <span className="font-bold">Dine In</span>
+                          <UtensilsCrossed size={18} />
+                          <span className="font-bold text-sm">Dine In</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOrderType("delivery");
+                            calculateAmount(selectedItems, "delivery");
+                          }}
+                          className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "delivery"
+                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
+                            : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
+                            }`}
+                        >
+                          <Truck size={18} />
+                          <span className="font-bold text-sm">Delivery</span>
                         </button>
                         <button
                           type="button"
@@ -2694,23 +2709,23 @@ export default function FoodOrders() {
                             setOrderType("room_service");
                             calculateAmount(selectedItems, "room_service");
                           }}
-                          className={`flex items-center justify-center gap-3 p-4 border-2 rounded-xl transition-all ${orderType === "room_service"
+                          className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "room_service"
                             ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
                             : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
                             }`}
                         >
-                          <Home size={20} />
-                          <span className="font-bold">Room Service</span>
+                          <Home size={18} />
+                          <span className="font-bold text-sm">Room Service</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Delivery Request */}
-                    {orderType === "room_service" && (
+                    {(orderType === "room_service" || orderType === "delivery") && (
                       <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
                         <label className="block text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
                           <Truck size={16} />
-                          Delivery Instructions (Optional)
+                          {orderType === "delivery" ? "Delivery Address & Contact Details" : "Delivery Instructions (Optional)}
                         </label>
                         <textarea
                           placeholder="Add delivery instructions, timing preferences, or special notes..."
@@ -2944,12 +2959,14 @@ export default function FoodOrders() {
                           </div>
                           <div className="flex flex-col gap-2 items-end">
                             <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${order.order_type === "room_service"
-                                ? "bg-purple-100 text-purple-700"
-                                : "bg-blue-100 text-blue-700"
+                              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${order.order_type === "delivery"
+                                ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                : order.order_type === "room_service"
+                                ? "bg-purple-100 text-purple-700 border border-purple-200"
+                                : "bg-blue-100 text-blue-700 border border-blue-200"
                                 }`}
                             >
-                              {order.order_type === "room_service" ? "Room Service" : "Dine In"}
+                              {order.order_type === "delivery" ? "🛵 Delivery" : (order.order_type === "room_service" ? "🛏️ Room Service" : "🍽️ Dine In")}
                             </span>
                             {normalizedStatus !== "cancelled" && (
                               <div className="flex items-center gap-1.5">
