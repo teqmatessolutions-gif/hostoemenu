@@ -5,13 +5,11 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";
 import HostoLogo from "./components/HostoLogo";
-import ChefAiTasteMatcher from "./components/ChefAiTasteMatcher";
 
 export default function App() {
   const API = getApiBaseUrl();
   const MEDIA = getMediaBaseUrl();
 
-  const [showAiBubble, setShowAiBubble] = useState(true);
   // Contact & Sales Inquiry Form State (Dedicated Hosto eMenu)
   const [contactForm, setContactForm] = useState({
     restaurant_name: "",
@@ -465,16 +463,7 @@ export default function App() {
                 <span>Live Menu Demo</span>
               </button>
             </div>
-            <a
-              href="#chef-ai"
-              onClick={() => {
-                if (activeTab !== "landing") setActiveTab("landing");
-              }}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition"
-            >
-              <Bot className="w-3.5 h-3.5 text-amber-600" />
-              <span>Chef AI</span>
-            </a>
+
             <a
               href="#contact"
               onClick={() => {
@@ -699,16 +688,7 @@ export default function App() {
             </div>
           </section>
 
-          {/* ── Section: Interactive Chef AI Taste Sommelier & Animation Lab ── */}
-          <section id="chef-ai" className="py-12 px-4 max-w-6xl mx-auto w-full">
-            <ChefAiTasteMatcher
-              onSelectDish={(dish) => {
-                toast.success(`Selected "${dish.dish}"! Switching to Live Menu.`);
-                setActiveTab("menu");
-              }}
-              onExploreMenu={() => setActiveTab("menu")}
-            />
-          </section>
+
 
           {/* ── Feature Breakdown Section ── */}
           <section className="py-16 px-4 max-w-6xl mx-auto w-full">
@@ -1584,38 +1564,7 @@ export default function App() {
           </div>
         </div>
       </footer>
-      {/* ── Floating Interactive Chef AI Assistant Bot ── */}
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3">
-        {showAiBubble && (
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-amber-300 shadow-2xl text-xs max-w-xs text-slate-800 animate-bounce flex items-center justify-between gap-3">
-            <span className="flex items-center gap-1.5">
-              <span>✨</span>
-              <span>Ask <strong>Chef AI</strong> for taste pairings!</span>
-            </span>
-            <button 
-              onClick={() => setShowAiBubble(false)} 
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-        <button
-          onClick={() => {
-            if (activeTab !== "landing") setActiveTab("landing");
-            const el = document.getElementById("chef-ai");
-            if (el) {
-              el.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
-          className="relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-600 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-500/50 hover:scale-110 active:scale-95 transition-all group"
-          title="Open Chef AI Taste Matcher"
-        >
-          <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-400 to-orange-500 rounded-2xl blur-md opacity-50 group-hover:opacity-80 transition duration-500 animate-pulse" />
-          <Bot className="w-7 h-7 relative z-10 text-slate-950" />
-          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-ping" />
-        </button>
-      </div>
+
     </div>
   );
 }
