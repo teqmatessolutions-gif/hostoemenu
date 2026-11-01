@@ -25,5 +25,9 @@ class Branch(Base):
     
     tenant = relationship("Tenant", back_populates="branches")
 
+    @property
+    def tenant_name(self):
+        return self.tenant.name if self.tenant else None
+
     def __repr__(self):
         return f"<Branch id={self.id} name={self.name} code={self.code}>"

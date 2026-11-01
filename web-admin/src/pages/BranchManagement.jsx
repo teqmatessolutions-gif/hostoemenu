@@ -102,9 +102,14 @@ export default function BranchManagement() {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [companies, setCompanies] = useState([]);
+    const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+    const [isSubmittingCompany, setIsSubmittingCompany] = useState(false);
+    const [newCompany, setNewCompany] = useState({ name: '', contact_email: '', contact_phone: '' });
     const [formData, setFormData] = useState({
         name: '',
         code: '',
+        tenant_id: '',
         address: '',
         phone: '',
         email: '',
@@ -116,6 +121,15 @@ export default function BranchManagement() {
         linkedin: '',
         location: ''
     });
+
+    const fetchCompanies = async () => {
+        try {
+            const response = await api.get('/companies');
+            setCompanies(response.data || []);
+        } catch (error) {
+            console.error('Failed to fetch companies:', error);
+        }
+    };
 
     const fetchAllBranches = async () => {
         try {
@@ -132,7 +146,29 @@ export default function BranchManagement() {
 
     useEffect(() => {
         fetchAllBranches();
+        fetchCompanies();
     }, []);
+
+    const handleCreateCompany = async (e) => {
+        e.preventDefault();
+        if (!newCompany.name.trim()) {
+            toast.error('Company name is required');
+            return;
+        }
+        try {
+            setIsSubmittingCompany(true);
+            const res = await api.post('/companies', newCompany);
+            toast.success(`Company "${res.data.name}" created!`);
+            await fetchCompanies();
+            setFormData(prev => ({ ...prev, tenant_id: res.data.id }));
+            setNewCompany({ name: '', contact_email: '', contact_phone: '' });
+            setIsCompanyModalOpen(false);
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Failed to create company');
+        } finally {
+            setIsSubmittingCompany(false);
+        }
+    };
 
     const handleOpenModal = (branch = null) => {
         setImageFile(null);
@@ -143,6 +179,7 @@ export default function BranchManagement() {
             setFormData({
                 name: branch.name,
                 code: branch.code,
+                tenant_id: branch.tenant_id || '',
                 address: branch.address || '',
                 phone: branch.phone || '',
                 email: branch.email || '',
@@ -162,6 +199,7 @@ export default function BranchManagement() {
             setFormData({
                 name: '',
                 code: '',
+                tenant_id: companies.length === 1 ? companies[0].id : '',
                 address: '',
                 phone: '',
                 email: '',
@@ -308,9 +346,14 @@ export default function BranchManagement() {
                                                 </span>
                                             )}
                                         </div>
-                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-full mt-1 inline-block ${branch.is_active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-500'}`}>
-                                            {branch.code}
-                                        </span>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                            <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full inline-block ${branch.is_active ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-200 text-gray-500'}`}>
+                                                {branch.code}
+                                            </span>
+                                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 inline-flex items-center gap-1">
+                                                🏢 {branch.tenant_name || (companies.find(c => c.id === branch.tenant_id)?.name) || 'Company'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
@@ -431,6 +474,32 @@ export default function BranchManagement() {
 
                                         <div className="space-y-4">
                                             <h3 className="text-sm font-bold text-indigo-600 uppercase tracking-wider">Basic Information</h3>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-700 uppercase mb-1 flex items-center justify-between">
+                                                    <span>🏢 Company / Organization <span className="text-red-500">*</span></span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsCompanyModalOpen(true)}
+                                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                                                    >
+                                                        + Create New Company
+                                                    </button>
+                                                </label>
+                                                <select
+                                                    value={formData.tenant_id}
+                                                    onChange={(e) => setFormData({ ...formData, tenant_id: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-medium text-sm text-gray-800 bg-white"
+                                                    required
+                                                >
+                                                    <option value="">-- Choose Company --</option>
+                                                    {companies.map(c => (
+                                                        <option key={c.id} value={c.id}>
+                                                            🏢 {c.name} ({c.branches_count || 0} branches)
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-[11px] text-gray-400 mt-1">Select which company this branch operates under.</p>
+                                            </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Property Name</label>
                                                 <input
@@ -619,6 +688,71 @@ export default function BranchManagement() {
                     </div>
                 )}
             </div>
+
+            {/* Quick Company Creation Modal */}
+            {isCompanyModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100">
+                        <h3 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                            <Building2 className="text-indigo-600" size={24} />
+                            Create New Company
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-4">Add a new business or enterprise entity to organize your branches.</p>
+                        
+                        <form onSubmit={handleCreateCompany} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Company / Business Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newCompany.name}
+                                    onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                                    placeholder="e.g. Royal Heritage Hospitality"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Company Email</label>
+                                <input
+                                    type="email"
+                                    value={newCompany.contact_email}
+                                    onChange={(e) => setNewCompany({ ...newCompany, contact_email: e.target.value })}
+                                    placeholder="e.g. corporate@royalheritage.com"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-600 uppercase mb-1">Company Phone</label>
+                                <input
+                                    type="text"
+                                    value={newCompany.contact_phone}
+                                    onChange={(e) => setNewCompany({ ...newCompany, contact_phone: e.target.value })}
+                                    placeholder="e.g. +91 98765 12345"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCompanyModalOpen(false)}
+                                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmittingCompany}
+                                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-md shadow-indigo-200"
+                                >
+                                    {isSubmittingCompany ? <Loader2 size={16} className="animate-spin" /> : "Save Company"}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </DashboardLayout>
     );
 }

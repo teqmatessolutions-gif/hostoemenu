@@ -85,6 +85,7 @@ def get_branch_by_id(
 async def create_branch(
     name: str = Form(...),
     code: str = Form(...),
+    tenant_id: Optional[int] = Form(None),
     address: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
@@ -104,22 +105,42 @@ async def create_branch(
     - Customer / Tenant Owner: Can create branches for their own business up to their monthly plan quota.
     """
     is_global_superadmin = getattr(current_user, 'is_superadmin', False) and current_user.branch_id is None
-    
-    tenant_id = None
-    if not is_global_superadmin:
+    from app.models.tenant import Tenant
+
+    assigned_tenant_id = None
+    if is_global_superadmin:
+        if tenant_id:
+            selected_tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+            if not selected_tenant:
+                raise HTTPException(status_code=404, detail="Selected company / tenant was not found.")
+            assigned_tenant_id = selected_tenant.id
+        else:
+            # Fallback: link to first active company or create default
+            first_tenant = db.query(Tenant).filter(Tenant.is_active == True).first()
+            if not first_tenant:
+                first_tenant = Tenant(
+                    name="Main Company",
+                    slug="main-company",
+                    contact_email=current_user.email or "admin@company.com",
+                    is_active=True
+                )
+                db.add(first_tenant)
+                db.commit()
+                db.refresh(first_tenant)
+            assigned_tenant_id = first_tenant.id
+    else:
         if not getattr(current_user, "tenant_id", None):
-            raise HTTPException(status_code=403, detail="Permission denied. Only authorized resort owners can create branches.")
+            raise HTTPException(status_code=403, detail="Permission denied. Only authorized company owners can create branches.")
         
-        tenant_id = current_user.tenant_id
-        from app.models.tenant import Tenant
-        tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+        assigned_tenant_id = current_user.tenant_id
+        tenant = db.query(Tenant).filter(Tenant.id == assigned_tenant_id).first()
         if not tenant:
-            raise HTTPException(status_code=404, detail="Resort business workspace not found.")
+            raise HTTPException(status_code=404, detail="Company business workspace not found.")
             
         # Check quota for monthly plan
         if tenant.plan and tenant.plan.max_branches:
             from app.models.branch import Branch as BranchModel
-            existing_count = db.query(BranchModel).filter(BranchModel.tenant_id == tenant_id).count()
+            existing_count = db.query(BranchModel).filter(BranchModel.tenant_id == assigned_tenant_id).count()
             if existing_count >= tenant.plan.max_branches:
                 raise HTTPException(
                     status_code=400,
@@ -149,7 +170,7 @@ async def create_branch(
         twitter=twitter,
         linkedin=linkedin,
         location=location,
-        tenant_id=tenant_id,
+        tenant_id=assigned_tenant_id,
         is_active=True
     )
 
@@ -158,6 +179,7 @@ async def update_branch(
     branch_id: int,
     name: Optional[str] = Form(None),
     code: Optional[str] = Form(None),
+    tenant_id: Optional[int] = Form(None),
     address: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
@@ -180,6 +202,7 @@ async def update_branch(
     
     update_data = {}
     if name is not None: update_data["name"] = name
+    if tenant_id is not None: update_data["tenant_id"] = tenant_id
     if code is not None:
         clean_code = code.strip().upper()
         from app.models.branch import Branch as BranchModel
@@ -311,3 +334,88 @@ def toggle_branch_status(
     db.commit()
     db.refresh(db_branch)
     return db_branch
+
+
+# ==========================================
+# Company / Tenant Management Endpoints
+# ==========================================
+from pydantic import BaseModel
+
+class CompanyCreate(BaseModel):
+    name: str
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    slug: Optional[str] = None
+
+@router.get("/companies")
+def get_companies(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieve companies / tenants list with branch counts."""
+    from app.models.tenant import Tenant
+    from sqlalchemy.orm import joinedload
+    
+    is_global_superadmin = getattr(current_user, 'is_superadmin', False) and current_user.branch_id is None
+    query = db.query(Tenant).options(joinedload(Tenant.branches))
+    if not is_global_superadmin and getattr(current_user, 'tenant_id', None):
+        query = query.filter(Tenant.id == current_user.tenant_id)
+        
+    tenants = query.order_by(Tenant.name.asc()).all()
+    return [
+        {
+            "id": t.id,
+            "name": t.name,
+            "slug": t.slug,
+            "contact_email": t.contact_email,
+            "contact_phone": t.contact_phone,
+            "is_active": t.is_active,
+            "branches_count": len(t.branches) if t.branches else 0
+        }
+        for t in tenants
+    ]
+
+@router.post("/companies")
+def create_company(
+    data: CompanyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new company / tenant."""
+    from app.models.tenant import Tenant
+    import re, uuid
+    
+    clean_name = data.name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Company name is required")
+        
+    base_slug = data.slug.strip().lower() if data.slug else re.sub(r'[^a-z0-9-]', '', clean_name.lower().replace(' ', '-'))
+    if not base_slug:
+        base_slug = f"company-{uuid.uuid4().hex[:4]}"
+        
+    clean_slug = base_slug
+    counter = 1
+    while db.query(Tenant).filter(Tenant.slug == clean_slug).first():
+        clean_slug = f"{base_slug}-{counter}"
+        counter += 1
+        
+    new_tenant = Tenant(
+        name=clean_name,
+        slug=clean_slug,
+        contact_email=data.contact_email or f"info@{clean_slug}.com",
+        contact_phone=data.contact_phone or "",
+        subscription_status="active",
+        is_active=True
+    )
+    db.add(new_tenant)
+    db.commit()
+    db.refresh(new_tenant)
+    return {
+        "id": new_tenant.id,
+        "name": new_tenant.name,
+        "slug": new_tenant.slug,
+        "contact_email": new_tenant.contact_email,
+        "contact_phone": new_tenant.contact_phone,
+        "is_active": new_tenant.is_active,
+        "branches_count": 0
+    }

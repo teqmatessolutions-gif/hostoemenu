@@ -5,6 +5,7 @@ from datetime import datetime
 class BranchBase(BaseModel):
     name: str
     code: str
+    tenant_id: Optional[int] = None
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -32,6 +33,7 @@ class BranchCreate(BranchBase):
 class BranchUpdate(BaseModel):
     name: Optional[str] = None
     code: Optional[str] = None
+    tenant_id: Optional[int] = None
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
@@ -55,6 +57,8 @@ class BranchUpdate(BaseModel):
 
 class Branch(BranchBase):
     id: int
+    tenant_id: Optional[int] = None
+    tenant_name: Optional[str] = None
     created_at: datetime
 
     class Config:
