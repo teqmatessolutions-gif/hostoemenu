@@ -915,11 +915,16 @@ def get_summary(
         ).all()
         departments_list = [dept[0] for dept in all_departments if dept[0]]
         
-        # Add common departments if not in list
-        common_departments = ["Restaurant", "Hotel", "Facility", "Office", "Security", "Fire & Safety", "Housekeeping"]
+        # Pure Restaurant F&B Operations: Only Restaurant department
+        common_departments = ["Restaurant"]
         for dept in common_departments:
             if dept not in departments_list:
                 departments_list.append(dept)
+        
+        # Filter out non-restaurant departments
+        departments_list = [d for d in departments_list if d.lower() in ["restaurant", "kitchen", "food", "dining", "bar", "beverage"]]
+        if "Restaurant" not in departments_list:
+            departments_list.append("Restaurant")
         
         # Calculate KPIs for each department
         for dept in departments_list:

@@ -653,7 +653,7 @@ export default function ReportsDashboard() {
       });
       let newData = dataType === 'roomBookings' ? (response.data.bookings || []) : (response.data || []);
       if (dataType === 'foodOrders') {
-        newData = newData.map(o => ({ ...o, room_number: o.room_number || (o.room_id && roomMap[o.room_id]) || '-', created_at: o.created_at || o.createdAt || '-' }));
+        newData = newData.map(o => ({ ...o, table: o.table_name || o.table_number || (o.table_id ? `Table ${o.table_id}` : (o.order_type === 'takeaway' ? 'Takeaway' : o.order_type === 'delivery' ? 'Delivery' : 'Dine In')), amount: o.total_amount != null ? `₹${parseFloat(o.total_amount).toFixed(2)}` : (o.grand_total != null ? `₹${parseFloat(o.grand_total).toFixed(2)}` : '-'), status: o.order_status || o.status || 'Completed', created_at: o.created_at ? formatDateTimeIST(o.created_at) : (o.createdAt ? formatDateTimeIST(o.createdAt) : '-') }));
       }
       if (dataType === 'inventory') {
         newData = newData.map(item => ({
@@ -760,11 +760,13 @@ export default function ReportsDashboard() {
         setRoomMap(map);
 
         // Use a single state update to prevent blinking
-        // Normalize food orders to include room_number and created_at if possible
+        // Normalize food orders to include table and created_at
         const normalizedFood = (foodOrdersRes.data || []).map(o => ({
           ...o,
-          room_number: o.room_number || (o.room_id && map[o.room_id]) || '-',
-          created_at: o.created_at || o.createdAt || '-',
+          table: o.table_name || o.table_number || (o.table_id ? `Table ${o.table_id}` : (o.order_type === 'takeaway' ? 'Takeaway' : o.order_type === 'delivery' ? 'Delivery' : 'Dine In')),
+          amount: o.total_amount != null ? `₹${parseFloat(o.total_amount).toFixed(2)}` : (o.grand_total != null ? `₹${parseFloat(o.grand_total).toFixed(2)}` : '-'),
+          status: o.order_status || o.status || 'Completed',
+          created_at: o.created_at ? formatDateTimeIST(o.created_at) : (o.createdAt ? formatDateTimeIST(o.createdAt) : '-'),
         }));
 
         // Normalize expenses to avoid N/A and ensure consistent keys
@@ -1493,7 +1495,7 @@ export default function ReportsDashboard() {
       <div className="p-6 md:p-8 space-y-8 bg-gray-50 min-h-screen">
         {/* Main Tab Selector */}
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-800">Account Management</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Restaurant Finance & Accounts</h1>
           <div className="flex space-x-2 border-b border-gray-200">
             {mainTabs.map(tab => (
               <button
@@ -1515,7 +1517,7 @@ export default function ReportsDashboard() {
         {activeMainTab === "reports" && (
           <>
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">Comprehensive Dashboard</h2>
+              <h2 className="text-2xl font-bold text-gray-800">Restaurant Financial Operations</h2>
               <div className="flex items-center space-x-2 bg-white p-1 rounded-lg shadow">
                 {['day', 'week', 'month', 'all'].map(p => (
                   <button
@@ -1529,41 +1531,109 @@ export default function ReportsDashboard() {
               </div>
             </div>
 
-            {/* ===== KPI Grid ===== */}
+            {/* ===== Restaurant Financial KPI Grid ===== */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-5">
-              <KpiCard title="Room Bookings" value={kpiData.room_bookings || 0} loading={loading} icon={<BedDouble className="text-purple-500 w-8 h-8" />} />
-              <KpiCard title="Package Bookings" value={kpiData.package_bookings || 0} loading={loading} icon={<Package className="text-indigo-500 w-8 h-8" />} />
-              <KpiCard title="Total Bookings" value={kpiData.total_bookings || 0} loading={loading} icon={<Calendar className="text-blue-500 w-8 h-8" />} />
-
-              <KpiCard title="Food Orders" value={kpiData.food_orders || 0} loading={loading} icon={<Utensils className="text-orange-500 w-8 h-8" />} />
-              <KpiCard title="Services Assigned" value={kpiData.assigned_services || 0} loading={loading} icon={<ConciergeBell className="text-teal-500 w-8 h-8" />} />
-              <KpiCard title="Services Completed" value={kpiData.completed_services || 0} loading={loading} icon={<CheckCircle className="text-green-500 w-8 h-8" />} />
-
-              <KpiCard title="Total Expenses" value={kpiData.total_expenses || 0} prefix="₹" decimals={2} loading={loading} icon={<DollarSign className="text-red-500 w-8 h-8" />} />
-              <KpiCard title="Expense Count" value={kpiData.expense_count || 0} loading={loading} icon={<ShoppingCart className="text-red-400 w-8 h-8" />} />
-
-              <KpiCard title="Active Employees" value={kpiData.active_employees || 0} loading={loading} icon={<Users className="text-cyan-500 w-8 h-8" />} />
-              <KpiCard title="Total Salary" value={kpiData.total_salary || 0} prefix="₹" decimals={2} loading={loading} icon={<Briefcase className="text-gray-600 w-8 h-8" />} />
-
-              <KpiCard title="Food Items" value={kpiData.food_items_available || 0} suffix=" Available" loading={loading} icon={<Utensils className="text-yellow-500 w-8 h-8" />} />
-
-              <KpiCard title="Inventory Categories" value={kpiData.inventory_categories || 0} loading={loading} icon={<Tag className="text-pink-500 w-8 h-8" />} />
-              <KpiCard title="Inventory Departments" value={kpiData.inventory_departments || 0} loading={loading} icon={<Building2 className="text-indigo-500 w-8 h-8" />} />
-              <KpiCard title="Service Revenue" value={kpiData.total_service_revenue || 0} prefix="₹" decimals={2} loading={loading} icon={<ConciergeBell className="text-violet-500 w-8 h-8" />} />
-              <KpiCard title="Total Purchases" value={kpiData.total_purchases || 0} prefix="₹" decimals={2} loading={loading} icon={<ShoppingBag className="text-amber-500 w-8 h-8" />} />
-              <KpiCard title="Purchase Count" value={kpiData.purchase_count || 0} loading={loading} icon={<Boxes className="text-orange-500 w-8 h-8" />} />
-              <KpiCard title="Vendors" value={kpiData.vendor_count || 0} loading={loading} icon={<Store className="text-emerald-500 w-8 h-8" />} />
+              <KpiCard 
+                title="Food & Dining Sales" 
+                value={kpiData.department_kpis?.Restaurant?.income ?? kpiData.total_revenue ?? 0} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<Utensils className="text-emerald-600 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Food Orders" 
+                value={kpiData.food_orders || 0} 
+                loading={loading} 
+                icon={<Receipt className="text-indigo-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Total Expenses" 
+                value={kpiData.total_expenses || 0} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<DollarSign className="text-rose-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Expense Count" 
+                value={kpiData.expense_count || 0} 
+                loading={loading} 
+                icon={<ShoppingCart className="text-amber-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Restaurant Staff" 
+                value={kpiData.active_employees || 0} 
+                loading={loading} 
+                icon={<Users className="text-cyan-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Staff Payroll" 
+                value={kpiData.total_salary || 0} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<Briefcase className="text-slate-600 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Active Menu Items" 
+                value={kpiData.food_items_available || 0} 
+                suffix=" Available" 
+                loading={loading} 
+                icon={<Utensils className="text-orange-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Kitchen Stock Value" 
+                value={kpiData.total_inventory_value || kpiData.department_kpis?.Restaurant?.assets || 0} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<Boxes className="text-teal-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Kitchen Purchases" 
+                value={kpiData.total_purchases || 0} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<ShoppingBag className="text-violet-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Purchase Orders" 
+                value={kpiData.purchase_count || 0} 
+                loading={loading} 
+                icon={<Tag className="text-purple-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Food Vendors" 
+                value={kpiData.vendor_count || 0} 
+                loading={loading} 
+                icon={<Store className="text-emerald-500 w-8 h-8" />} 
+              />
+              <KpiCard 
+                title="Net Restaurant Profit" 
+                value={(kpiData.department_kpis?.Restaurant?.income ?? kpiData.total_revenue ?? 0) - (kpiData.total_expenses || 0) - (kpiData.total_purchases || 0)} 
+                prefix="₹" 
+                decimals={2} 
+                loading={loading} 
+                icon={<TrendingUp className="text-emerald-600 w-8 h-8" />} 
+              />
             </div>
 
-            {/* ===== Department-wise KPIs ===== */}
+            {/* ===== Restaurant Financial Performance & P&L ===== */}
             {kpiData.department_kpis && Object.keys(kpiData.department_kpis).length > 0 && (
               <div className="mt-8">
                 <h3 className="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                  <Building2 className="text-indigo-600 w-6 h-6" />
-                  Department-wise Financial Overview
+                  <Utensils className="text-emerald-600 w-6 h-6" />
+                  Restaurant Financial Statement & P&L
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.entries(kpiData.department_kpis).map(([dept, data]) => (
+                  {Object.entries(kpiData.department_kpis)
+                    .filter(([dept]) => {
+                      const d = dept.toLowerCase();
+                      return d === "restaurant" || d.includes("kitchen") || d.includes("food") || d.includes("dining") || d.includes("bar") || d.includes("beverage");
+                    })
+                    .map(([dept, data]) => (
                     <motion.div
                       key={dept}
                       className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition duration-300"
@@ -1645,111 +1715,7 @@ export default function ReportsDashboard() {
                   ))}
                 </div>
 
-                {/* Department-wise Financial Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                  {/* Assets Comparison Chart */}
-                  <SectionCard
-                    title="Assets by Department"
-                    icon={<TrendingUp className="text-green-600 w-6 h-6" />}
-                    loading={loading}
-                  >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={Object.entries(kpiData.department_kpis || {}).map(([dept, data]) => ({
-                        department: dept,
-                        assets: data.assets || 0
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="department" angle={-45} textAnchor="end" height={80} />
-                        <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-                        <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                        <Bar dataKey="assets" fill="#10b981" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </SectionCard>
 
-                  {/* Income vs Expenses Comparison */}
-                  <SectionCard
-                    title="Income vs Expenses by Department"
-                    icon={<ArrowUpDown className="text-blue-600 w-6 h-6" />}
-                    loading={loading}
-                  >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={Object.entries(kpiData.department_kpis || {}).map(([dept, data]) => ({
-                        department: dept,
-                        income: data.income || 0,
-                        expenses: data.expenses || 0
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="department" angle={-45} textAnchor="end" height={80} />
-                        <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-                        <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                        <Legend />
-                        <Bar dataKey="income" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                        <Bar dataKey="expenses" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </SectionCard>
-
-                  {/* Income Distribution Pie Chart */}
-                  <SectionCard
-                    title="Income Distribution"
-                    icon={<DollarSign className="text-blue-600 w-6 h-6" />}
-                    loading={loading}
-                  >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={Object.entries(kpiData.department_kpis || {})
-                            .filter(([_, data]) => (data.income || 0) > 0)
-                            .map(([dept, data]) => ({
-                              name: dept,
-                              value: data.income || 0
-                            }))}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {Object.entries(kpiData.department_kpis || {})
-                            .filter(([_, data]) => (data.income || 0) > 0)
-                            .map((_, index) => {
-                              const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
-                              return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
-                            })}
-                        </Pie>
-                        <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </SectionCard>
-
-                  {/* Net Profit Comparison */}
-                  <SectionCard
-                    title="Net Profit by Department"
-                    icon={<TrendingUp className="text-green-600 w-6 h-6" />}
-                    loading={loading}
-                  >
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={Object.entries(kpiData.department_kpis || {}).map(([dept, data]) => ({
-                        department: dept,
-                        profit: (data.income || 0) - (data.expenses || 0)
-                      }))}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="department" angle={-45} textAnchor="end" height={80} />
-                        <YAxis tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}K`} />
-                        <Tooltip formatter={(value) => `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                        <Bar dataKey="profit" radius={[8, 8, 0, 0]}>
-                          {Object.entries(kpiData.department_kpis || {}).map(([_, data], index) => {
-                            const profit = (data.income || 0) - (data.expenses || 0);
-                            return <Cell key={`cell-${index}`} fill={profit >= 0 ? "#10b981" : "#ef4444"} />;
-                          })}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </SectionCard>
-                </div>
               </div>
             )}
 
@@ -1784,16 +1750,14 @@ export default function ReportsDashboard() {
               </SectionCard>
             </div>
 
-            {/* --- Detailed Data Section --- */}
+            {/* --- Restaurant Detailed Financial Records --- */}
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Detailed Reports for Period: <span className="text-indigo-600 capitalize">{period}</span></h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Detailed Restaurant Records for Period: <span className="text-indigo-600 capitalize">{period}</span></h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <DetailTable title="Room Bookings" headers={['Guest Name', 'Check In', 'Check Out', 'Status']} data={detailedData.roomBookings || []} loading={detailsLoading} hasMore={pagination.roomBookings?.hasMore ?? false} loadMore={roomBookingsRef} isSubmitting={isSubmitting} />
-                <DetailTable title="Package Bookings" headers={['Guest Name', 'Check In', 'Check Out', 'Status']} data={detailedData.packageBookings || []} loading={detailsLoading} hasMore={pagination.packageBookings?.hasMore ?? false} loadMore={packageBookingsRef} isSubmitting={isSubmitting} />
-                <DetailTable title="Food Orders" headers={['Room Number', 'Amount', 'Status', 'Created At']} data={detailedData.foodOrders || []} loading={detailsLoading} hasMore={pagination.foodOrders?.hasMore ?? false} loadMore={foodOrdersRef} isSubmitting={isSubmitting} />
-                <DetailTable title="Expenses" headers={['Category', 'Description', 'Amount', 'Expense Date']} data={detailedData.expenses || []} loading={detailsLoading} hasMore={pagination.expenses?.hasMore ?? false} loadMore={expensesRef} isSubmitting={isSubmitting} />
-                <DetailTable title="Employee Salaries" headers={['Name', 'Role', 'Salary', 'Hire Date']} data={detailedData.employees || []} loading={detailsLoading} hasMore={pagination.employees?.hasMore ?? false} loadMore={employeesRef} isSubmitting={isSubmitting} />
-                <DetailTable title="Inventory Items" headers={['Name', 'Category', 'Current Stock', 'Unit Price', 'Stock Value', 'Status']} data={detailedData.inventory || []} loading={detailsLoading} hasMore={pagination.inventory?.hasMore ?? false} loadMore={inventoryRef} isSubmitting={isSubmitting} />
+                <DetailTable title="Food & Dining Orders" headers={['Table', 'Amount', 'Status', 'Created At']} data={detailedData.foodOrders || []} loading={detailsLoading} hasMore={pagination.foodOrders?.hasMore ?? false} loadMore={foodOrdersRef} isSubmitting={isSubmitting} />
+                <DetailTable title="Restaurant Operating Expenses" headers={['Category', 'Description', 'Amount', 'Expense Date']} data={detailedData.expenses || []} loading={detailsLoading} hasMore={pagination.expenses?.hasMore ?? false} loadMore={expensesRef} isSubmitting={isSubmitting} />
+                <DetailTable title="Restaurant Staff & Payroll" headers={['Name', 'Role', 'Salary', 'Hire Date']} data={detailedData.employees || []} loading={detailsLoading} hasMore={pagination.employees?.hasMore ?? false} loadMore={employeesRef} isSubmitting={isSubmitting} />
+                <DetailTable title="Kitchen Inventory & Stock Value" headers={['Name', 'Category', 'Current Stock', 'Unit Price', 'Stock Value', 'Status']} data={detailedData.inventory || []} loading={detailsLoading} hasMore={pagination.inventory?.hasMore ?? false} loadMore={inventoryRef} isSubmitting={isSubmitting} />
               </div>
             </div>
           </>
