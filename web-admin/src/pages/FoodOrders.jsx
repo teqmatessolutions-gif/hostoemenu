@@ -1354,7 +1354,7 @@ export default function FoodOrders() {
     }
 
     // Return order type specific price if no time-wise match
-    if (oType === "room_service" && food.room_service_price) {
+    if ((oType === "room_service" || oType === "delivery") && food.room_service_price) {
       return parseFloat(food.room_service_price);
     }
 
@@ -2876,7 +2876,7 @@ export default function FoodOrders() {
                                             <span className="text-[10px] text-slate-400 font-bold uppercase">{f.category_name || "Food Dish"}</span>
                                           </div>
                                           <span className="text-emerald-700 font-black text-sm bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                                            ₹{f.price}
+                                            ₹{getItemPriceAtTime(f, orderType)}
                                           </span>
                                         </div>
                                       ))}
@@ -4233,18 +4233,25 @@ export default function FoodOrders() {
                         <h3 className="font-semibold text-lg text-gray-800 mb-1">{item.name}</h3>
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
 
-                        {/* Pricing */}
-                        <div className="mb-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500">Dine In:</span>
-                            <span className="font-semibold text-indigo-600">₹{item.price || 0}</span>
+                        {/* Restaurant Dual Pricing: Dine In & Takeaway */}
+                        <div className="mb-3.5 p-2 rounded-2xl bg-slate-50 border border-slate-200/90 grid grid-cols-2 gap-2 shadow-inner">
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                              🍽️ Dine In
+                            </span>
+                            <span className="text-base font-black text-slate-900 mt-1 tracking-tight">
+                              ₹{item.price || 0}
+                            </span>
                           </div>
-                          {item.room_service_price && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-500">Takeaway:</span>
-                              <span className="font-semibold text-purple-600">₹{item.room_service_price}</span>
-                            </div>
-                          )}
+
+                          <div className="bg-white p-2.5 rounded-xl border border-purple-200 shadow-sm flex flex-col justify-between">
+                            <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider flex items-center gap-1">
+                              🛍️ Takeaway
+                            </span>
+                            <span className="text-base font-black text-purple-700 mt-1 tracking-tight">
+                              ₹{item.room_service_price || item.price || 0}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Cost & Profit (if recipe exists) */}
