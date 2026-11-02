@@ -329,7 +329,7 @@ const GstInfoModal = ({ report, onClose }) => {
 // ============================================
 
 export default function ComprehensiveReport() {
-  const [activeTab, setActiveTab] = useState('front-office');
+  const [activeTab, setActiveTab] = useState('restaurant');
   const [activeReport, setActiveReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -388,12 +388,10 @@ export default function ComprehensiveReport() {
   };
 
   const departmentTabs = [
-    { id: 'front-office', name: 'Front Office', icon: Hotel, color: 'blue' },
     { id: 'restaurant', name: 'Restaurant (F&B)', icon: Utensils, color: 'orange' },
-    { id: 'inventory', name: 'Inventory & Purchase', icon: Package, color: 'purple' },
-    { id: 'housekeeping', name: 'Housekeeping & Facility', icon: Home, color: 'green' },
-    { id: 'security-hr', name: 'Security & HR', icon: Shield, color: 'red' },
-    { id: 'gst', name: 'GST Reports', icon: FileText, color: 'indigo' },
+    { id: 'inventory', name: 'Kitchen Inventory', icon: Package, color: 'purple' },
+    { id: 'gst', name: 'GST & Invoicing Reports', icon: FileText, color: 'indigo' },
+    { id: 'security-hr', name: 'Staff & Payroll', icon: Shield, color: 'blue' },
   ];
 
   // Fetch report data
