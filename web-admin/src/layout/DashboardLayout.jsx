@@ -373,7 +373,7 @@ export default function DashboardLayout({ children }) {
             {/* Left side: App Logo and Branch Switcher */}
             <div className="flex flex-col items-center gap-4 w-full">
               <div className="p-0 rounded-xl flex items-center justify-center w-full">
-                <img src={hostoLogo} className="h-32 md:h-40 w-auto object-contain drop-shadow-2xl" alt="Hosto Hospitality Logo" />
+                <img src={hostoLogo} className="h-20 md:h-24 w-auto object-contain transition-transform duration-300 hover:scale-105" alt="Hosto eMenu Logo" />
               </div>
 
               {/* Branch name/switcher section */}
