@@ -5,7 +5,7 @@ import api from "../services/api";
 import API from "../services/api";
 import { Bar, Line } from "react-chartjs-2";
 import "chart.js/auto";
-import { ChefHat, X, Package, Home, UtensilsCrossed, Truck, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Plus, Trash2, ShoppingCart, Printer } from "lucide-react";
+import { ChefHat, X, Package, Home, UtensilsCrossed, Truck, CreditCard, CheckCircle, XCircle, Clock, TrendingUp, Plus, Trash2, ShoppingCart, ShoppingBag, Printer } from "lucide-react";
 import CountUp from "react-countup";
 import { toast } from "react-hot-toast";
 import { getImageUrl } from "../utils/imageUtils";
@@ -1444,15 +1444,7 @@ export default function FoodOrders() {
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    // If completing, show modal for paid/unpaid selection
-    if (newStatus === "completed") {
-      const order = orders.find(o => o.id === id);
-      setShowCompleteModal(order);
-      setPaymentStatus(order.billing_status === "paid" ? "paid" : "unpaid");
-      return;
-    }
-
-
+    // Kitchen completion: directly update status without payment interaction
     // Optimistically update UI immediately
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
 
@@ -1946,6 +1938,7 @@ export default function FoodOrders() {
           <LiveTableGrid onNavigateToOrder={(tblId) => {
             if (tblId) setTableId(tblId.toString());
             setOrderType("dine_in");
+            setActiveTab("orders");
             setShowFoodOrderModal(true);
           }} />
         )}
@@ -2944,23 +2937,21 @@ export default function FoodOrders() {
                             >
                               {isDelivery ? "🛵 Delivery" : (isTakeaway ? "🛍️ Takeaway" : "🍽️ Dine In")}
                             </span>
-                            {normalizedStatus !== "cancelled" && (
-                              <div className="flex items-center gap-1">
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${order.billing_status === "paid"
-                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                                    : "bg-rose-100 text-rose-800 border border-rose-300"
-                                    }`}
-                                >
-                                  {order.billing_status === "paid" ? "🟢 Paid" : "🔴 Unpaid"}
-                                </span>
-                                {order.billing_status === "paid" && (
-                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold uppercase border border-slate-200">
-                                    {order.payment_method || 'Cash'}
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                                normalizedStatus === "completed"
+                                  ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  : normalizedStatus === "ready"
+                                  ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                  : normalizedStatus === "in_progress"
+                                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                  : normalizedStatus === "cancelled"
+                                  ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                  : "bg-yellow-100 text-yellow-800 border border-yellow-200"
+                              }`}
+                            >
+                              {normalizedStatus === "completed" ? "✅ Completed" : normalizedStatus === "ready" ? "🟢 Ready" : normalizedStatus === "in_progress" ? "🍳 In Kitchen" : normalizedStatus === "cancelled" ? "❌ Cancelled" : "⏳ Pending"}
+                            </span>
                           </div>
                         </div>
 
@@ -3084,9 +3075,8 @@ export default function FoodOrders() {
                           <div className="flex justify-between items-center">
                             <div className="flex flex-col">
                               <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Order Total</span>
-                              <span className={`text-[10px] font-black uppercase ${order.billing_status === 'paid' ? 'text-emerald-600' : 'text-red-600'}`}>
-                               {order.billing_status === 'paid' ? `Settled - ${order.payment_method || 'Cash'}` : 'Unpaid - Due'}
-                              </span>                            </div>
+                              <span className="text-[10px] font-bold text-slate-400">Kitchen KOT Value</span>
+                            </div>
                             <span className="text-xl font-bold text-indigo-600">₹{parseFloat(order.total_with_gst || order.amount || 0).toLocaleString('en-IN')}</span>
                           </div>
                         </div>
@@ -3148,18 +3138,7 @@ export default function FoodOrders() {
                             </button>
                           </div>
 
-                          {normalizedStatus === "completed" && (
-                            <button
-                              onClick={() => handleTogglePaymentStatus(order)}
-                              className={`w-full text-sm font-medium px-3 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 border ${order.billing_status === "paid"
-                                ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
-                                : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                }`}
-                            >
-                              <CreditCard size={16} />
-                              Mark as {order.billing_status === "paid" ? "Unpaid" : "Paid"}
-                            </button>
-                          )}
+
 
                           <select
                             value={normalizedStatus}

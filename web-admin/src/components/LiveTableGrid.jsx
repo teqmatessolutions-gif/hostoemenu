@@ -862,6 +862,134 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
         </div>
       )}
 
+      {/* ── Admin Take Reservation Modal ── */}
+      {isAdminReserveOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-slate-900">
+            <div className="flex justify-between items-center pb-3 mb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">
+                    {adminReserveTableId ? `Reserve Table ${data.tables?.find(t => t.id.toString() === adminReserveTableId)?.table_number || adminReserveTableId}` : 'Take Table Reservation'}
+                  </h3>
+                  <p className="text-xs text-slate-500">Hold dining table for arriving guests</p>
+                </div>
+              </div>
+              <button onClick={() => setIsAdminReserveOpen(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAdminReserveSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Guest Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Kumar"
+                    value={adminReserveForm.guest_name}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, guest_name: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="9876543210"
+                    value={adminReserveForm.guest_phone}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, guest_phone: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Guests (Seats)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={adminReserveForm.guest_count}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, guest_count: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={adminReserveForm.reservation_date}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, reservation_date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Time</label>
+                  <input
+                    type="time"
+                    value={adminReserveForm.reservation_time}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, reservation_time: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Dining Table</label>
+                  <select
+                    value={adminReserveTableId}
+                    onChange={(e) => setAdminReserveTableId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-bold"
+                  >
+                    <option value="">Auto-Assign Best Available Table</option>
+                    {(data.tables || []).map(t => (
+                      <option key={t.id} value={t.id.toString()}>
+                        Table {t.table_number} ({t.status}) - {t.seating_capacity || 4} Seats
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Special Notes / Requests</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Window side, birthday celebration"
+                    value={adminReserveForm.special_notes}
+                    onChange={(e) => setAdminReserveForm({ ...adminReserveForm, special_notes: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAdminReserveOpen(false)}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={adminReserveSubmitting}
+                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-xl transition shadow-sm active:scale-95 disabled:opacity-50"
+                >
+                  {adminReserveSubmitting ? 'Holding Table...' : 'Confirm Hold'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
