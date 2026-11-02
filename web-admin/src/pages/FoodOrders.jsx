@@ -1300,6 +1300,21 @@ export default function FoodOrders() {
     calculateAmount(updated);
   };
 
+  const handleSelectDish = (index, dish) => {
+    setSelectedItems(prev => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        food_item_id: String(dish.id),
+        searchQuery: dish.name,
+        isOpen: false,
+        quantity: next[index]?.quantity || 1
+      };
+      calculateAmount(next, orderType);
+      return next;
+    });
+  };
+
   // Helper to get active price based on time
   const getItemPriceAtTime = (food, oType = "dine_in") => {
     if (!food) return 0;
@@ -1360,7 +1375,7 @@ export default function FoodOrders() {
       room_id: null,
       billing_status: "unbilled",
       assigned_employee_id: orderType === "room_service" && employeeId ? parseInt(employeeId) : null,
-      prepared_by_id: parseInt(preparedById),
+      prepared_by_id: preparedById ? parseInt(preparedById) : null,
       amount,
       order_type: orderType,
       delivery_request: orderType === "room_service" && deliveryRequest ? deliveryRequest : null,
@@ -2500,7 +2515,7 @@ export default function FoodOrders() {
                       </div>
                       <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Assign to Kitchen * {employees.length > 0 && (
+                          Assign to Kitchen (Optional) {employees.length > 0 && (
                             <span className="text-xs text-gray-400 font-normal">
                               ({(() => {
                                 const count = employees.filter(e => {
@@ -2519,7 +2534,7 @@ export default function FoodOrders() {
                           onChange={(e) => setPreparedById(e.target.value)}
                           className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black font-medium"
                         >
-                          <option value="">{employees.length === 0 ? "Searching for employees..." : "Choose a chef / kitchen staff..."}</option>
+                          <option value="">Auto-Dispatch to Kitchen KOT / Display</option>
                           {(() => {
                             const isKitchen = (e) => {
                               if (!e || !e.id) return false;
@@ -2694,7 +2709,7 @@ export default function FoodOrders() {
                     )}
 
                     {/* Food Items Selection */}
-                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <div className="bg-gray-50 p-6 pb-48 rounded-2xl border border-gray-100 min-h-[300px]">
                       <div className="flex justify-between items-center mb-4">
                         <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Food Items *</label>
                         <button
@@ -2735,7 +2750,7 @@ export default function FoodOrders() {
                                   className="w-full border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 text-black font-medium outline-none"
                                 />
                                 {item.isOpen && (
-                                  <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                  <div className="absolute z-[100] left-0 right-0 mt-1.5 bg-white border border-slate-300 rounded-2xl shadow-2xl max-h-72 overflow-y-auto divide-y divide-slate-100 ring-4 ring-indigo-500/10">
                                     {foodItems
                                       .filter((f) => {
                                         const q = (item.searchQuery || "").toLowerCase();
@@ -2744,19 +2759,26 @@ export default function FoodOrders() {
                                       .map((f) => (
                                         <div
                                           key={f.id}
-                                          onMouseDown={() => {
-                                            handleItemChange(index, "food_item_id", String(f.id));
-                                            handleItemChange(index, "searchQuery", f.name);
-                                            handleItemChange(index, "isOpen", false);
+                                          onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleSelectDish(index, f);
                                           }}
-                                          className="px-4 py-2.5 hover:bg-indigo-50 cursor-pointer text-sm text-gray-700 flex justify-between items-center transition-colors border-b border-gray-50 last:border-b-0"
+                                          className="px-4 py-3 hover:bg-indigo-50 cursor-pointer text-sm flex justify-between items-center transition-colors group"
                                         >
-                                          <span className="font-semibold text-gray-800">{f.name}</span>
-                                          <span className="text-indigo-600 font-bold">₹{f.price}</span>
+                                          <div>
+                                            <span className="font-black text-slate-800 group-hover:text-indigo-600 block">{f.name}</span>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase">{f.category_name || "Food Dish"}</span>
+                                          </div>
+                                          <span className="text-emerald-700 font-black text-sm bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                                            ₹{f.price}
+                                          </span>
                                         </div>
                                       ))}
                                     {foodItems.filter((f) => f.name.toLowerCase().includes((item.searchQuery || "").toLowerCase())).length === 0 && (
-                                      <div className="px-4 py-3 text-sm text-gray-500 italic text-center">No matching food items</div>
+                                      <div className="px-4 py-5 text-sm text-slate-400 italic text-center">
+                                        No matching food items found
+                                      </div>
                                     )}
                                   </div>
                                 )}
@@ -2809,7 +2831,7 @@ export default function FoodOrders() {
                       </button>
                       <button
                         onClick={handleSubmit}
-                        disabled={!roomId || (orderType === "room_service" && !employeeId) || selectedItems.length === 0}
+                        disabled={(!tableId && orderType === "dine_in") || selectedItems.filter(i => i.food_item_id).length === 0 || isSubmitting}
                         className="flex-1 sm:flex-none px-10 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                       >
                         <ShoppingCart size={20} />
