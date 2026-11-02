@@ -583,7 +583,7 @@ export default function App() {
       {/* VIEW 1: SAAS PLATFORM INTRODUCTION, PLANS & PARTNERSHIP     */}
       {/* ─────────────────────────────────────────────────────────── */}
       {activeTab === "landing" && (
-        <div className="flex-1 flex flex-col">
+        <AiInteractiveBackground className="flex-1 flex flex-col">
           
           {/* ── Live Restaurant Operations Moving Ticker ── */}
           <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 py-2 overflow-hidden border-b border-amber-600 text-slate-950 font-bold text-xs select-none shadow-inner">
@@ -598,7 +598,7 @@ export default function App() {
           </div>
 
           {/* Hero Section with AI Interactive Background */}
-          <AiInteractiveBackground className="bg-gradient-to-b from-amber-50/40 via-white to-slate-50 border-b border-slate-200 py-12 lg:py-16 px-4">
+          <div className="bg-gradient-to-b from-amber-50/30 via-white/80 to-slate-50/40 border-b border-slate-200/80 py-12 lg:py-16 px-4">
             <section className="relative">
             <div className="max-w-5xl mx-auto text-center relative z-10">
               
@@ -763,7 +763,7 @@ export default function App() {
 
             </div>
           </section>
-          </AiInteractiveBackground>
+          </div>
 
 
 
@@ -1122,7 +1122,7 @@ export default function App() {
             </div>
           </section>
 
-        </div>
+        </AiInteractiveBackground>
       )}
 
       {/* ─────────────────────────────────────────────────────────── */}

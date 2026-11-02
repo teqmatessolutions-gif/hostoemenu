@@ -1,53 +1,56 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Sparkles, Flame, Leaf, Wine } from "lucide-react";
 
 /**
- * AI Interactive Culinary Background
- * Features:
- * - Dynamic HTML5 Canvas with neural culinary particle mesh (sparks, aroma motes, neural connections)
- * - Real-time cursor interaction (gentle repulsion, mouse spotlight aura, connecting neural filaments)
- * - Interactive AI Restaurant Ambiance Mood Switcher (Sizzling Grill 🔥, Bistro Garden 🌿, Midnight Lounge 🍸)
+ * Full-Page Silky Smooth AI Interactive Culinary Background
+ * - Native 60-120fps hardware-accelerated canvas with zero React re-render lag
+ * - Fluid inertia-based cursor tracking with linear interpolation (LERP)
+ * - Gentle particle repulsion with culinary sparks & aroma filaments across entire page
+ * - Dynamic AI Culinary Moods: Sizzling Grill 🔥, Bistro Garden 🌿, Midnight Lounge 🍸
  */
 export default function AiInteractiveBackground({ children, className = "" }) {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const [ambientMood, setAmbientMood] = useState("sizzle"); // 'sizzle' | 'fresh' | 'midnight'
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
-  const [isHovered, setIsHovered] = useState(false);
 
   // Color schemes for each AI culinary mood
-  const moodThemes = {
+  const moodThemes = useMemo(() => ({
     sizzle: {
       name: "Sizzling Grill",
       icon: Flame,
-      primaryColor: "rgba(245, 158, 11, 0.14)", // Amber-500
-      secondaryColor: "rgba(239, 68, 68, 0.08)", // Red-500
-      particleColor: "rgba(245, 158, 11, ",
+      particleColor: "rgba(245, 158, 11, ", // Amber-500
       lineColor: "rgba(245, 158, 11, ",
       accentHex: "#F59E0B",
+      auraCenter: "rgba(245, 158, 11, 0.16)",
+      auraMid: "rgba(239, 68, 68, 0.05)",
+      ambientGlow1: "rgba(245, 158, 11, 0.10)",
+      ambientGlow2: "rgba(239, 68, 68, 0.06)",
       activeBg: "bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30",
     },
     fresh: {
       name: "Fresh Garden Bistro",
       icon: Leaf,
-      primaryColor: "rgba(16, 185, 129, 0.14)", // Emerald-500
-      secondaryColor: "rgba(59, 130, 246, 0.08)", // Blue-500
-      particleColor: "rgba(16, 185, 129, ",
+      particleColor: "rgba(16, 185, 129, ", // Emerald-500
       lineColor: "rgba(16, 185, 129, ",
       accentHex: "#10B981",
+      auraCenter: "rgba(16, 185, 129, 0.16)",
+      auraMid: "rgba(59, 130, 246, 0.05)",
+      ambientGlow1: "rgba(16, 185, 129, 0.10)",
+      ambientGlow2: "rgba(59, 130, 246, 0.06)",
       activeBg: "bg-emerald-500 text-white font-black shadow-md shadow-emerald-500/30",
     },
     midnight: {
       name: "Midnight Lounge",
       icon: Wine,
-      primaryColor: "rgba(139, 92, 246, 0.16)", // Purple-500
-      secondaryColor: "rgba(236, 72, 153, 0.08)", // Pink-500
-      particleColor: "rgba(168, 85, 247, ",
+      particleColor: "rgba(168, 85, 247, ", // Purple-500
       lineColor: "rgba(168, 85, 247, ",
       accentHex: "#8B5CF6",
+      auraCenter: "rgba(139, 92, 246, 0.18)",
+      auraMid: "rgba(236, 72, 153, 0.05)",
+      ambientGlow1: "rgba(139, 92, 246, 0.10)",
+      ambientGlow2: "rgba(236, 72, 153, 0.06)",
       activeBg: "bg-purple-600 text-white font-black shadow-md shadow-purple-600/30",
     },
-  };
+  }), []);
 
   const currentTheme = moodThemes[ambientMood];
 
@@ -57,111 +60,147 @@ export default function AiInteractiveBackground({ children, className = "" }) {
     const ctx = canvas.getContext("2d");
     let animationFrameId;
 
-    let width = (canvas.width = canvas.offsetWidth);
-    let height = (canvas.height = canvas.offsetHeight);
+    // Track mouse with smooth inertia (LERP) - no React state updates
+    const mouse = {
+      targetX: -1000,
+      targetY: -1000,
+      currentX: -1000,
+      currentY: -1000,
+      active: false
+    };
+
+    let width = 0;
+    let height = 0;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     const handleResize = () => {
       if (!canvas) return;
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
+    handleResize();
     window.addEventListener("resize", handleResize);
 
-    // Particle settings
-    const particleCount = Math.min(Math.floor((width * height) / 18000), 45);
+    // Particle settings for full-page distribution
+    const particleCount = Math.min(Math.max(Math.floor((width * height) / 20000), 50), 75);
     const particles = [];
-    const maxLineDist = 120;
-    const maxMouseDist = 140;
+    const maxLineDist = 140;
+    const maxMouseDist = 175;
 
     for (let i = 0; i < particleCount; i++) {
+      const baseVx = (Math.random() - 0.5) * 0.55;
+      const baseVy = (Math.random() - 0.5) * 0.55 - 0.18; // gentle upward culinary aroma drift
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.7,
-        vy: (Math.random() - 0.5) * 0.7 - 0.2, // slight upward float like aroma
-        radius: Math.random() * 2.5 + 1.2,
-        baseAlpha: Math.random() * 0.45 + 0.25,
-        pulseSpeed: Math.random() * 0.02 + 0.01,
-        pulseVal: Math.random() * Math.PI,
+        vx: baseVx,
+        vy: baseVy,
+        baseVx,
+        baseVy,
+        radius: Math.random() * 2.2 + 1.2,
+        baseAlpha: Math.random() * 0.4 + 0.28,
+        pulseSpeed: Math.random() * 0.025 + 0.015,
+        pulseVal: Math.random() * Math.PI * 2,
       });
     }
 
-    const mouse = { x: -1000, y: -1000, active: false };
-
-    const handleMouseMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+    const handleWindowMouseMove = (e) => {
+      mouse.targetX = e.clientX;
+      mouse.targetY = e.clientY;
       mouse.active = true;
-      setMousePos({ x: mouse.x, y: mouse.y });
+      if (mouse.currentX < -500) {
+        mouse.currentX = e.clientX;
+        mouse.currentY = e.clientY;
+      }
     };
 
-    const handleMouseLeave = () => {
+    const handleWindowMouseLeave = () => {
       mouse.active = false;
-      mouse.x = -1000;
-      mouse.y = -1000;
-      setIsHovered(false);
+      mouse.targetX = -1000;
+      mouse.targetY = -1000;
     };
 
-    const handleMouseEnter = () => {
-      setIsHovered(true);
-    };
+    window.addEventListener("mousemove", handleWindowMouseMove, { passive: true });
+    window.addEventListener("mouseleave", handleWindowMouseLeave, { passive: true });
 
-    const container = containerRef.current;
-    if (container) {
-      container.addEventListener("mousemove", handleMouseMove);
-      container.addEventListener("mouseleave", handleMouseLeave);
-      container.addEventListener("mouseenter", handleMouseEnter);
-    }
-
-    // Animation Loop
+    // 60-120fps Smooth Animation Render Loop
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Render Neural Connections
+      // Smooth LERP mouse tracking (buttery 60/120fps inertia)
+      if (mouse.active) {
+        mouse.currentX += (mouse.targetX - mouse.currentX) * 0.12;
+        mouse.currentY += (mouse.targetY - mouse.currentY) * 0.12;
+
+        // Render Cursor Spotlight Aura directly to Canvas (zero DOM lag!)
+        if (mouse.currentX > 0 && mouse.currentX < width && mouse.currentY > 0 && mouse.currentY < height) {
+          const aura = ctx.createRadialGradient(
+            mouse.currentX, mouse.currentY, 0,
+            mouse.currentX, mouse.currentY, 340
+          );
+          aura.addColorStop(0, currentTheme.auraCenter);
+          aura.addColorStop(0.45, currentTheme.auraMid);
+          aura.addColorStop(1, "rgba(255, 255, 255, 0)");
+          ctx.fillStyle = aura;
+          ctx.fillRect(0, 0, width, height);
+        }
+      }
+
+      // Render Particles and Connections
       for (let i = 0; i < particles.length; i++) {
         const p1 = particles[i];
 
-        // Update position
-        p1.x += p1.vx;
-        p1.y += p1.vy;
+        // Smooth physics update
         p1.pulseVal += p1.pulseSpeed;
 
-        // Wrap around bounds
-        if (p1.x < -10) p1.x = width + 10;
-        if (p1.x > width + 10) p1.x = -10;
-        if (p1.y < -10) p1.y = height + 10;
-        if (p1.y > height + 10) p1.y = -10;
-
-        // Mouse gentle repulsion / interaction
+        // Mouse interaction: silky smooth repulsion & filament connection
         if (mouse.active) {
-          const dx = p1.x - mouse.x;
-          const dy = p1.y - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const dx = p1.x - mouse.currentX;
+          const dy = p1.y - mouse.currentY;
+          const dist = Math.hypot(dx, dy);
 
           if (dist < maxMouseDist && dist > 0) {
-            const force = (maxMouseDist - dist) / maxMouseDist;
-            p1.x += (dx / dist) * force * 2.5;
-            p1.y += (dy / dist) * force * 2.5;
+            const force = Math.pow((maxMouseDist - dist) / maxMouseDist, 1.4);
+            const angle = Math.atan2(dy, dx);
+            p1.vx += Math.cos(angle) * force * 0.7;
+            p1.vy += Math.sin(angle) * force * 0.7;
 
-            // Draw line to cursor with glowing gradient
+            // Fluid glowing filament connecting particle to cursor
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(mouse.x, mouse.y);
-            const lineAlpha = (1 - dist / maxMouseDist) * 0.4;
-            ctx.strokeStyle = `${currentTheme.lineColor}${lineAlpha})`;
-            ctx.lineWidth = 1.2;
+            ctx.lineTo(mouse.currentX, mouse.currentY);
+            const filamentAlpha = force * 0.38;
+            ctx.strokeStyle = `${currentTheme.lineColor}${filamentAlpha})`;
+            ctx.lineWidth = 1.1;
             ctx.stroke();
           }
         }
 
-        // Connect particles within proximity
+        // Apply smooth inertia friction & gentle wander drift
+        p1.vx = p1.vx * 0.95 + p1.baseVx * 0.05;
+        p1.vy = p1.vy * 0.95 + p1.baseVy * 0.05;
+
+        p1.x += p1.vx;
+        p1.y += p1.vy;
+
+        // Wrap around viewport edges seamlessly
+        if (p1.x < -20) p1.x = width + 20;
+        if (p1.x > width + 20) p1.x = -20;
+        if (p1.y < -20) p1.y = height + 20;
+        if (p1.y > height + 20) p1.y = -20;
+
+        // Neural filaments between nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p1.x - p2.x;
           const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const dist = Math.hypot(dx, dy);
 
           if (dist < maxLineDist) {
             const alpha = (1 - dist / maxLineDist) * 0.18;
@@ -174,13 +213,13 @@ export default function AiInteractiveBackground({ children, className = "" }) {
           }
         }
 
-        // Draw particle node
+        // Render glowing particle mote
         const currentAlpha = p1.baseAlpha + Math.sin(p1.pulseVal) * 0.15;
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `${currentTheme.particleColor}${Math.max(0.1, currentAlpha)})`;
+        ctx.fillStyle = `${currentTheme.particleColor}${Math.max(0.12, currentAlpha)})`;
         ctx.shadowColor = currentTheme.accentHex;
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 6;
         ctx.fill();
         ctx.shadowBlur = 0; // reset
       }
@@ -193,48 +232,32 @@ export default function AiInteractiveBackground({ children, className = "" }) {
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
-      if (container) {
-        container.removeEventListener("mousemove", handleMouseMove);
-        container.removeEventListener("mouseleave", handleMouseLeave);
-        container.removeEventListener("mouseenter", handleMouseEnter);
-      }
+      window.removeEventListener("mousemove", handleWindowMouseMove);
+      window.removeEventListener("mouseleave", handleWindowMouseLeave);
     };
   }, [ambientMood, currentTheme]);
 
   return (
-    <div ref={containerRef} className={`relative overflow-hidden ${className}`}>
-      {/* HTML5 Canvas Neural Mesh */}
+    <div className={`relative ${className}`}>
+      {/* Full-Page Fixed Canvas */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none z-0"
+        className="fixed inset-0 w-full h-full pointer-events-none z-0"
       />
 
-      {/* Dynamic Cursor Spotlight Aura */}
-      {isHovered && mousePos.x > 0 && (
-        <div
-          className="pointer-events-none absolute w-[600px] h-[600px] rounded-full blur-3xl transition-opacity duration-300 z-0"
-          style={{
-            left: `${mousePos.x}px`,
-            top: `${mousePos.y}px`,
-            transform: "translate(-50%, -50%)",
-            background: `radial-gradient(circle, ${currentTheme.primaryColor} 0%, ${currentTheme.secondaryColor} 45%, transparent 70%)`,
-          }}
-        />
-      )}
-
-      {/* Ambient Radial Diffuse Backlight Orbs */}
+      {/* Ambient Diffuse Backlight Orbs */}
       <div
-        className="pointer-events-none absolute top-12 left-1/4 w-[500px] h-[300px] rounded-full blur-[100px] transition-colors duration-1000 -z-10"
-        style={{ background: currentTheme.primaryColor }}
+        className="pointer-events-none fixed top-16 left-1/4 w-[600px] h-[350px] rounded-full blur-[130px] transition-colors duration-1000 -z-10"
+        style={{ background: currentTheme.ambientGlow1 }}
       />
       <div
-        className="pointer-events-none absolute bottom-10 right-1/4 w-[450px] h-[280px] rounded-full blur-[100px] transition-colors duration-1000 -z-10"
-        style={{ background: currentTheme.secondaryColor }}
+        className="pointer-events-none fixed bottom-20 right-1/4 w-[550px] h-[320px] rounded-full blur-[130px] transition-colors duration-1000 -z-10"
+        style={{ background: currentTheme.ambientGlow2 }}
       />
 
       {/* Floating AI Dining Ambiance Switcher Pill */}
-      <div className="relative z-20 flex justify-center mb-4">
-        <div className="inline-flex items-center gap-1.5 p-1 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-md">
+      <div className="relative z-20 flex justify-center pt-3 pb-1">
+        <div className="inline-flex items-center gap-1.5 p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-md">
           <div className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-slate-500 uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
             <span>AI Ambiance</span>
@@ -278,9 +301,8 @@ export default function AiInteractiveBackground({ children, className = "" }) {
         </div>
       </div>
 
-      {/* Children content (Hero, Cards, Ticker, etc.) */}
+      {/* Children content (Full Page: Hero, Cards, Ticker, Pricing, Contact, etc.) */}
       <div className="relative z-10">{children}</div>
     </div>
   );
 }
-
