@@ -1,8 +1,96 @@
 /**
  * Reusable Restaurant Dining Bill & POS Invoice Printer
- * Compatible with thermal receipt printers (80mm) and standard A4 / Letter.
+ * Compatible with Bluetooth & USB thermal receipt printers (58mm / 80mm) and standard A4 / PDF.
  */
-export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid = false }) => {
+
+export const connectBluetoothPrinter = async () => {
+  if (typeof navigator !== 'undefined' && navigator.bluetooth) {
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS Printer service
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455', // ISSC
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+        ]
+      });
+      if (device) {
+        return { success: true, name: device.name || 'Bluetooth POS Printer', device };
+      }
+    } catch (err) {
+      if (err.name !== 'NotFoundError') {
+        console.warn('Bluetooth pairing cancelled or error:', err);
+      }
+    }
+  }
+
+  // Fallback instructions for Windows/Mac system bluetooth printers
+  return {
+    success: false,
+    message:
+      'To use your Bluetooth Thermal Printer:\n' +
+      '1. Pair it in Windows Settings -> Bluetooth & Devices.\n' +
+      '2. In the Print Dialog, select your Bluetooth POS Printer as the Destination.\n' +
+      '3. Set Paper Size to 80mm or 58mm (Roll).'
+  };
+};
+
+export const shareBillViaWhatsApp = ({ table, branch, paymentMethod = 'Cash', isPaid = false, phone = '' }) => {
+  if (!table) return;
+
+  const branchTitle = branch?.name || 'HOSTO EMENU RESTAURANT';
+  const branchAddr = branch?.address || '';
+  const branchPhone = branch?.phone || '';
+  const branchGst = branch?.gst_number || '';
+  const tableNum = table.table_number || table.id;
+  const guest = table.guest_name || 'Valued Dining Guest';
+  const items = table.items || [];
+  const billAmount = Number(table.current_bill_amount) || 0;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  let itemsSummary = '';
+  if (items.length > 0) {
+    itemsSummary = items.map((it, idx) => `  ${idx + 1}. *${it.name}* × ${it.quantity || 1}`).join('\n');
+  } else {
+    itemsSummary = `  • Dining Service (Table ${tableNum})`;
+  }
+
+  const message =
+`🍽️ *${branchTitle.toUpperCase()}*
+🧾 *DIGITAL DINING BILL RECEIPT*
+━━━━━━━━━━━━━━━━━━━━
+📍 *Table:* Table ${tableNum}
+👤 *Guest:* ${guest}
+📅 *Date:* ${dateStr} | ${timeStr}
+💳 *Payment:* ${paymentMethod.toUpperCase()} (${isPaid ? 'PAID ✔️' : 'PENDING ⏳'})
+${branchGst ? `🏛️ *GSTIN:* ${branchGst}\n` : ''}${branchPhone ? `📞 *Tel:* ${branchPhone}\n` : ''}${branchAddr ? `🏢 *Address:* ${branchAddr}\n` : ''}━━━━━━━━━━━━━━━━━━━━
+*ORDERED DISHES:*
+${itemsSummary}
+━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL PAYABLE: ₹${billAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}*
+━━━━━━━━━━━━━━━━━━━━
+${isPaid ? '✅ *Status:* Bill Settled & Paid' : '⏳ *Status:* Pre-Bill / Payment Due'}
+
+🙏 *Thank you for dining with us!*
+We hope you enjoyed your meal. Visit us again soon!
+_Hosto eMenu Smart POS & Dining_`;
+
+  let cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+  if (cleanPhone.length === 10) {
+    cleanPhone = `91${cleanPhone}`;
+  }
+
+  const url = cleanPhone
+    ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`
+    : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+
+  window.open(url, '_blank');
+};
+
+export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid = false, paperWidth = '80mm' }) => {
   if (!table) return;
 
   const branchTitle = branch?.name || 'HOSTO EMENU RESTAURANT';
@@ -22,7 +110,7 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
   const cgst = (gstAmount / 2).toFixed(2);
   const sgst = (gstAmount / 2).toFixed(2);
 
-  const printWindow = window.open('', '_blank', 'width=450,height=650');
+  const printWindow = window.open('', '_blank', 'width=450,height=700');
   if (!printWindow) {
     alert('Please allow popups to print restaurant bills.');
     return;
@@ -52,19 +140,24 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
       <head>
         <title>Dining Bill - Table ${tableNum} - ${branchTitle}</title>
         <style>
+          @page {
+            size: ${paperWidth} auto;
+            margin: 0mm;
+          }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
-            padding: 24px;
+            padding: 16px;
             color: #0f172a;
             max-width: 380px;
             margin: auto;
             font-size: 13px;
             line-height: 1.4;
+            background: #f8fafc;
           }
           .receipt {
             border: 1px dashed #94a3b8;
-            padding: 20px;
+            padding: 18px;
             border-radius: 12px;
             background: #ffffff;
           }
@@ -164,14 +257,33 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
             line-height: 1.5;
           }
           @media print {
-            body { padding: 0; }
-            .receipt { border: none; padding: 0; }
+            body { 
+              padding: 0mm; 
+              margin: 0mm; 
+              width: ${paperWidth}; 
+              background: #ffffff;
+            }
+            .receipt { 
+              border: none !important; 
+              padding: 2mm 3mm !important; 
+              border-radius: 0 !important;
+              max-width: 100% !important;
+            }
             .no-print { display: none !important; }
           }
         </style>
       </head>
       <body>
         <div class="receipt">
+          <div class="no-print" style="margin-bottom: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button onclick="window.print()" style="padding: 8px 16px; background: #0f172a; color: white; border: none; font-weight: 800; border-radius: 8px; cursor: pointer; font-size: 12px;">
+              🖨️ Print Receipt
+            </button>
+            <button onclick="window.print()" style="padding: 8px 16px; background: #0284c7; color: white; border: none; font-weight: 800; border-radius: 8px; cursor: pointer; font-size: 12px;" title="Choose Destination -> Save as PDF in print dialog">
+              📄 Save as PDF
+            </button>
+          </div>
+
           <div class="header">
             <div class="brand">${branchTitle}</div>
             <div class="doc-type">${hasGst ? 'TAX INVOICE' : 'DINING BILL RECEIPT'}</div>
@@ -233,15 +345,10 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
             <p>Thank you for dining with us!</p>
             <p>Powered by Hosto eMenu Smart Dining POS</p>
           </div>
-
-          <div class="no-print" style="margin-top: 20px; text-align: center;">
-            <button onclick="window.print()" style="padding: 10px 24px; background: #0f172a; color: white; border: none; font-weight: 800; border-radius: 10px; cursor: pointer; font-size: 13px;">
-              🖨️ Print Receipt (80mm)
-            </button>
-          </div>
         </div>
+
         <script>
-          // Automatically prompt print dialog
+          // Auto prompt print dialog for quick thermal receipt printing
           setTimeout(() => {
             window.print();
           }, 350);
@@ -251,4 +358,3 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
   `);
   printWindow.document.close();
 };
-
