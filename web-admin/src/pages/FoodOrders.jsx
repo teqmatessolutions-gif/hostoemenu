@@ -1370,7 +1370,7 @@ export default function FoodOrders() {
     setAmount(total);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (autoPrintKOT = false) => {
     if (orderType === "dine_in" && !tableId) {
       toast.error("Please select a dining table.");
       return;
@@ -1429,6 +1429,9 @@ export default function FoodOrders() {
       // Manually add to state to ensure immediate visibility
       if (res.data) {
         setOrders(prev => [res.data, ...prev]);
+        if (autoPrintKOT) {
+          handlePrintKOT(res.data);
+        }
       }
 
       // Only refresh orders table, not all data
@@ -1586,66 +1589,174 @@ export default function FoodOrders() {
   };
 
   const handlePrintKOT = (order) => {
+    if (!order) return;
     const roomData = rooms.find((r) => r.id === order.room_id);
     const roomNumber = roomData?.number || roomData?.room_number || order.room_number || (order.room_id ? `Room ${order.room_id}` : null);
-    const tableNum = order.table_number || order.table_id || "Dine-in";
-    const targetDisplay = order.order_type === 'dine_in' ? `Table: ${tableNum}` : (order.order_type === 'delivery' ? `Delivery: ${order.delivery_request ? order.delivery_request.replace('DELIVERY | ', '').split('|')[0].trim() : 'Doorstep Delivery'}` : (roomNumber ? `Room: ${roomNumber}` : 'Room Service'));
-    const branchTitle = currentBranch?.name || 'DIGITAL MENU RESTAURANT';
+    const tableObj = tables.find((t) => t.id === order.table_id);
+    const tableNum = order.table_number || tableObj?.table_number || order.table_id || "Dine-In";
+    const targetDisplay = order.order_type === 'dine_in'
+      ? `TABLE ${tableNum}`
+      : (order.order_type === 'delivery'
+          ? `DELIVERY: ${order.delivery_request ? order.delivery_request.replace('DELIVERY | ', '').split('|')[0].trim() : 'Doorstep Delivery'}`
+          : (roomNumber ? `ROOM ${roomNumber}` : 'TAKEAWAY / PARCEL'));
+    const branchTitle = currentBranch?.name || activeBranch?.name || 'HOSTO EMENU RESTAURANT';
     const printWindow = window.open("", "_blank", "width=420,height=600");
+    if (!printWindow) {
+      alert("Please allow popups to print Kitchen KOT.");
+      return;
+    }
 
-    const itemsHtml = (order.items || []).map(item => `
-      <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #ccc; font-size: 15px;">
-        <span style="font-weight: 700; flex: 1;">${item.food_item_name}</span>
-        <span style="font-weight: 900; font-size: 18px; margin-left: 12px; color: #000;">x ${item.quantity}</span>
-      </div>
-    `).join("");
+    const itemsHtml = (order.items || []).map((item, idx) => {
+      const name = item.food_item_name || item.name || item.food_item?.name || (foodItems.find(f => f.id === item.food_item_id)?.name) || `Dish #${item.food_item_id}`;
+      const qty = item.quantity || 1;
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px dashed #cbd5e1; font-size: 15px;">
+          <span style="font-weight: 800; color: #0f172a; flex: 1;">${idx + 1}. ${name}</span>
+          <span style="font-weight: 900; font-size: 20px; margin-left: 10px; color: #000; background: #f1f5f9; padding: 2px 8px; border-radius: 4px;">× ${qty}</span>
+        </div>
+      `;
+    }).join("");
+
+    const timeStr = order.created_at
+      ? (formatDateTimeIST ? formatDateTimeIST(order.created_at) : new Date(order.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }))
+      : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const rawItemsText = (order.items || []).map((it, i) => `${i+1}. ${it.food_item_name || it.name || 'Dish'} x ${it.quantity || 1}`).join('%0A');
+    const rawBtUrl = `rawbt:data:text/plain;charset=utf-8,KITCHEN ORDER TICKET (KOT)%0A${encodeURIComponent(branchTitle)}%0AKOT %23${order.id} | ${encodeURIComponent(targetDisplay)}%0ATime: ${encodeURIComponent(timeStr)}%0A--------------------------------%0A${rawItemsText}%0A--------------------------------%0A${order.delivery_request ? 'Note: ' + encodeURIComponent(order.delivery_request) + '%0A--------------------------------%0A' : ''}%0A%0A%0A`;
 
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>KOT #${order.id} - ${branchTitle}</title>
+          <title>KOT #${order.id} - ${targetDisplay}</title>
           <style>
-            body { font-family: 'Courier New', Courier, monospace, sans-serif; padding: 15px; color: #000; width: 320px; margin: auto; }
-            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
-            .title { font-size: 19px; font-weight: 900; letter-spacing: 1px; }
-            .info-line { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
-            .items { margin: 12px 0; }
-            .instructions { margin-top: 10px; padding: 8px; border: 1px solid #000; font-size: 12px; background: #fdfdfd; }
-            @media print { .no-print { display: none !important; } }
+            @page {
+              size: 80mm auto;
+              margin: 0mm;
+            }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+              padding: 12px;
+              color: #0f172a;
+              width: 320px;
+              max-width: 100%;
+              margin: auto;
+              font-size: 13px;
+              line-height: 1.35;
+              background: #fff;
+            }
+            .kot-card {
+              border: 2px solid #0f172a;
+              border-radius: 8px;
+              padding: 12px;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #0f172a;
+              padding-bottom: 8px;
+              margin-bottom: 8px;
+            }
+            .title {
+              font-size: 18px;
+              font-weight: 900;
+              letter-spacing: 0.5px;
+            }
+            .target-banner {
+              background: #0f172a;
+              color: #ffffff;
+              text-align: center;
+              font-size: 18px;
+              font-weight: 900;
+              padding: 6px;
+              border-radius: 6px;
+              margin: 8px 0;
+              letter-spacing: 1px;
+            }
+            .meta {
+              display: flex;
+              justify-content: space-between;
+              font-size: 11px;
+              margin-bottom: 6px;
+              padding-bottom: 6px;
+              border-bottom: 1px dashed #94a3b8;
+            }
+            .items { margin: 8px 0; }
+            .instructions {
+              margin-top: 8px;
+              padding: 8px;
+              border: 1.5px dashed #0f172a;
+              font-size: 12px;
+              background: #f8fafc;
+              border-radius: 6px;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 10px;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1px;
+            }
+            @media print {
+              body { padding: 0; margin: 0; width: 80mm; }
+              .kot-card { border: none; padding: 2mm 3mm; border-radius: 0; }
+              .no-print { display: none !important; }
+            }
           </style>
         </head>
         <body>
-          <div class="header">
-            <div class="title">KITCHEN ORDER TICKET (KOT)</div>
-            <div style="font-size: 13px; font-weight: bold; margin-top: 3px;">${branchTitle}</div>
-          </div>
-          <div class="info-line">
-            <span><strong>KOT #:</strong> #${order.id}</span>
-            <span><strong>Type:</strong> ${(order.order_type || 'dine_in').toUpperCase()}</span>
-          </div>
-          <div class="info-line">
-            <span><strong>Target:</strong> ${targetDisplay}</span>
-            <span><strong>Time:</strong> ${formatDateTimeIST ? formatDateTimeIST(order.created_at) : new Date(order.created_at).toLocaleTimeString()}</span>
-          </div>
-          <div class="info-line">
-            <span><strong>Waiter/Staff:</strong> ${order.employee_name || order.creator_name || 'Counter Staff'}</span>
-          </div>
-          <hr style="border: none; border-top: 1px dashed #000; margin: 8px 0;" />
-          <div class="items">
-            ${itemsHtml}
-          </div>
-          ${order.delivery_request ? `
-            <div class="instructions">
-              <strong>Special Instructions:</strong><br/>
-              ${order.delivery_request}
+          <div class="kot-card">
+            <div class="no-print" style="margin-bottom: 12px; display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;">
+              <button onclick="window.print()" style="padding: 8px 16px; background: #0f172a; color: white; border: none; font-weight: 800; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                🖨️ Print KOT (Thermal)
+              </button>
+              <a href="${rawBtUrl}" style="padding: 8px 14px; background: #059669; color: white; text-decoration: none; font-weight: 800; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                📲 Mobile Bluetooth App
+              </a>
             </div>
-          ` : ''}
-          <div style="text-align: center; margin-top: 15px; font-size: 11px; border-top: 1px dashed #000; padding-top: 6px;">
-            * PREPARE FRESH * ORDER #${order.id} *
+
+            <div class="header">
+              <div class="title">KITCHEN ORDER TICKET (KOT)</div>
+              <div style="font-size: 12px; font-weight: 700; color: #475569; margin-top: 2px;">${branchTitle}</div>
+            </div>
+
+            <div class="target-banner">
+              ${targetDisplay}
+            </div>
+
+            <div class="meta">
+              <div>
+                <span>KOT #: <strong>#${order.id}</strong></span><br/>
+                <span>Type: <strong>${(order.order_type || 'dine_in').toUpperCase()}</strong></span>
+              </div>
+              <div style="text-align: right;">
+                <span>Time: <strong>${timeStr}</strong></span><br/>
+                <span>Server: <strong>${order.employee_name || 'Staff'}</strong></span>
+              </div>
+            </div>
+
+            <div class="items">
+              ${itemsHtml}
+            </div>
+
+            ${order.delivery_request ? `
+              <div class="instructions">
+                <strong>📝 SPECIAL INSTRUCTIONS:</strong><br/>
+                <span style="font-weight: 700; font-size: 13px;">${order.delivery_request}</span>
+              </div>
+            ` : ''}
+
+            <div class="footer">
+              * PREPARE FRESH · KOT #${order.id} *
+            </div>
           </div>
-          <div class="no-print" style="margin-top: 20px; text-align: center;">
-            <button onclick="window.print()" style="padding: 8px 20px; background: #000; color: #fff; font-weight: bold; border: none; cursor: pointer; border-radius: 4px;">PRINT KOT</button>
-          </div>
+
+          <script>
+            // Automatically prompt print dialog on thermal printer
+            setTimeout(() => {
+              window.print();
+            }, 350);
+          </script>
         </body>
       </html>
     `);
@@ -2841,12 +2952,21 @@ export default function FoodOrders() {
                         Cancel
                       </button>
                       <button
-                        onClick={handleSubmit}
+                        onClick={() => handleSubmit(false)}
                         disabled={(!tableId && orderType === "dine_in") || (orderType === "delivery" && !deliveryAddress.trim()) || selectedItems.filter(i => i.food_item_id).length === 0 || isSubmitting}
-                        className="flex-1 sm:flex-none px-10 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none px-5 py-3 border-2 border-indigo-600 text-indigo-700 hover:bg-indigo-50 font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 disabled:border-gray-300 disabled:text-gray-400 disabled:cursor-not-allowed"
                       >
-                        <ShoppingCart size={20} />
-                        Confirm Order
+                        <ShoppingCart size={18} />
+                        Confirm
+                      </button>
+                      <button
+                        onClick={() => handleSubmit(true)}
+                        disabled={(!tableId && orderType === "dine_in") || (orderType === "delivery" && !deliveryAddress.trim()) || selectedItems.filter(i => i.food_item_id).length === 0 || isSubmitting}
+                        className="flex-1 sm:flex-none px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
+                        title="Confirm order and automatically trigger Bluetooth / Thermal KOT Print"
+                      >
+                        <Printer size={18} />
+                        Confirm &amp; Print KOT
                       </button>
                     </div>
                   </div>
