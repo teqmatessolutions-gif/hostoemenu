@@ -98,6 +98,10 @@ export default function FoodOrders() {
   const [amount, setAmount] = useState(0);
   const [orderType, setOrderType] = useState("dine_in"); // "dine_in" or "room_service"
   const [deliveryRequest, setDeliveryRequest] = useState("");
+  const [deliveryCustomerName, setDeliveryCustomerName] = useState("");
+  const [deliveryPhone, setDeliveryPhone] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryNotes, setDeliveryNotes] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -1365,9 +1369,33 @@ export default function FoodOrders() {
   };
 
   const handleSubmit = async () => {
-    if ((orderType === "dine_in" && !tableId) || selectedItems.length === 0) {
-      alert("Please select a dining table and at least one food dish.");
+    if (orderType === "dine_in" && !tableId) {
+      toast.error("Please select a dining table.");
       return;
+    }
+    if (orderType === "delivery" && !deliveryAddress.trim()) {
+      toast.error("Please enter the delivery address.");
+      return;
+    }
+    if (selectedItems.filter(i => i.food_item_id).length === 0) {
+      toast.error("Please select at least one food dish.");
+      return;
+    }
+
+    let finalDeliveryRequest = null;
+    if (orderType === "delivery") {
+      const parts = [];
+      if (deliveryCustomerName.trim()) parts.push(`Customer: ${deliveryCustomerName.trim()}`);
+      if (deliveryPhone.trim()) parts.push(`Phone: ${deliveryPhone.trim()}`);
+      if (deliveryAddress.trim()) parts.push(`Address: ${deliveryAddress.trim()}`);
+      if (deliveryNotes.trim()) parts.push(`Notes: ${deliveryNotes.trim()}`);
+      finalDeliveryRequest = parts.join(" | ");
+    } else if (orderType === "room_service") {
+      const parts = [];
+      if (deliveryCustomerName.trim()) parts.push(`Guest: ${deliveryCustomerName.trim()}`);
+      if (deliveryPhone.trim()) parts.push(`Phone: ${deliveryPhone.trim()}`);
+      if (deliveryNotes.trim()) parts.push(`Notes: ${deliveryNotes.trim()}`);
+      finalDeliveryRequest = parts.join(" | ");
     }
 
     const payload = {
@@ -1378,7 +1406,7 @@ export default function FoodOrders() {
       prepared_by_id: preparedById ? parseInt(preparedById) : null,
       amount,
       order_type: orderType,
-      delivery_request: orderType === "room_service" && deliveryRequest ? deliveryRequest : null,
+      delivery_request: finalDeliveryRequest || deliveryRequest || null,
       items: selectedItems.map((item) => ({
         food_item_id: parseInt(item.food_item_id),
         quantity: item.quantity,
@@ -2494,43 +2522,44 @@ export default function FoodOrders() {
 
                   {/* Modal Content */}
                   <div className="overflow-y-auto p-6 space-y-6">
-                    {/* Table Selection */}
-                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm">
-                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                        {orderType === "dine_in" ? "Select Dining Table *" : "Table / Reference (Optional)"}
-                      </label>
-                      <select
-                        value={tableId}
-                        onChange={(e) => setTableId(e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition text-slate-900 font-bold text-sm shadow-sm"
-                      >
-                        <option value="">{orderType === "dine_in" ? "Choose dining table..." : "Counter / Takeaway (No table)"}</option>
-                        {tables.map((table) => (
-                          <option key={table.id} value={table.id}>
-                            Table {table.table_number} ({table.seating_capacity || 4} Seats) · {table.status}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    {/* Order Destination / Table Selection */}
+                    {orderType === "dine_in" && (
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm">
+                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                          Select Dining Table *
+                        </label>
+                        <select
+                          value={tableId}
+                          onChange={(e) => setTableId(e.target.value)}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition text-slate-900 font-bold text-sm shadow-sm"
+                        >
+                          <option value="">Choose dining table...</option>
+                          {tables.map((table) => (
+                            <option key={table.id} value={table.id}>
+                              Table {table.table_number} ({table.seating_capacity || 4} Seats) · {table.status}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                     {/* Order Type Selection */}
                     <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-3">Order Type *</label>
+                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Order Service Type *</label>
                       <div className="grid grid-cols-3 gap-3">
                         <button
                           type="button"
                           onClick={() => {
                             setOrderType("dine_in");
-                            setDeliveryRequest("");
                             calculateAmount(selectedItems, "dine_in");
                           }}
                           className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "dine_in"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
-                            : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
+                            ? "border-slate-900 bg-slate-900 text-white font-black shadow-md"
+                            : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold"
                             }`}
                         >
-                          <UtensilsCrossed size={18} />
-                          <span className="font-bold text-sm">Dine In</span>
+                          <UtensilsCrossed size={16} />
+                          <span className="text-xs">🍽️ Dine In</span>
                         </button>
                         <button
                           type="button"
@@ -2539,12 +2568,12 @@ export default function FoodOrders() {
                             calculateAmount(selectedItems, "delivery");
                           }}
                           className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "delivery"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
-                            : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
+                            ? "border-amber-500 bg-amber-500 text-slate-950 font-black shadow-md"
+                            : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold"
                             }`}
                         >
-                          <Truck size={18} />
-                          <span className="font-bold text-sm">Delivery</span>
+                          <Truck size={16} />
+                          <span className="text-xs">🛵 Delivery</span>
                         </button>
                         <button
                           type="button"
@@ -2553,30 +2582,107 @@ export default function FoodOrders() {
                             calculateAmount(selectedItems, "room_service");
                           }}
                           className={`flex items-center justify-center gap-2 p-3 border-2 rounded-xl transition-all ${orderType === "room_service"
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md ring-2 ring-indigo-200"
-                            : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
+                            ? "border-purple-600 bg-purple-600 text-white font-black shadow-md"
+                            : "border-slate-200 hover:border-slate-300 text-slate-600 bg-white font-bold"
                             }`}
                         >
-                          <ShoppingBag size={18} />
-                          <span className="font-bold text-sm">Takeaway / Parcel</span>
+                          <ShoppingBag size={16} />
+                          <span className="text-xs">🛍️ Takeaway</span>
                         </button>
                       </div>
                     </div>
 
-                    {/* Delivery Request */}
-                    {(orderType === "room_service" || orderType === "delivery") && (
-                      <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
-                        <label className="block text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
-                          <Truck size={16} />
-                          {orderType === "delivery" ? "Delivery Address & Contact Details" : "Delivery Instructions (Optional)"}
-                        </label>
-                        <textarea
-                          placeholder="Add delivery instructions, timing preferences, or special notes..."
-                          className="w-full border border-blue-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition resize-none bg-white"
-                          rows="2"
-                          value={deliveryRequest}
-                          onChange={(e) => setDeliveryRequest(e.target.value)}
-                        />
+                    {/* Simple Delivery Address Form */}
+                    {orderType === "delivery" && (
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-amber-200/90 shadow-sm space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                          <Truck size={16} className="text-amber-600" />
+                          <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                            Doorstep Delivery Details
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Ramesh Patel"
+                              value={deliveryCustomerName}
+                              onChange={(e) => setDeliveryCustomerName(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium shadow-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Mobile Phone *</label>
+                            <input
+                              type="tel"
+                              placeholder="e.g. 9876543210"
+                              value={deliveryPhone}
+                              onChange={(e) => setDeliveryPhone(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium shadow-sm"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Delivery Address &amp; Landmark *</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Flat 301, Sunshine Heights, 5th Cross Road, Near Central Mall"
+                              value={deliveryAddress}
+                              onChange={(e) => setDeliveryAddress(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-medium shadow-sm"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold text-slate-500 mb-1">Delivery Notes (Optional)</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Ring bell, deliver hot by 8 PM"
+                              value={deliveryNotes}
+                              onChange={(e) => setDeliveryNotes(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500 shadow-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Simple Takeaway / Parcel Form */}
+                    {orderType === "room_service" && (
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-purple-200/90 shadow-sm space-y-3">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                          <ShoppingBag size={16} className="text-purple-600" />
+                          <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                            Takeaway / Parcel Pickup Details (Optional)
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Customer Name</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Priya Sharma"
+                              value={deliveryCustomerName}
+                              onChange={(e) => setDeliveryCustomerName(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-medium shadow-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-700 mb-1">Contact Phone</label>
+                            <input
+                              type="tel"
+                              placeholder="e.g. 9876543210"
+                              value={deliveryPhone}
+                              onChange={(e) => setDeliveryPhone(e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-medium shadow-sm"
+                            />
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -2703,7 +2809,7 @@ export default function FoodOrders() {
                       </button>
                       <button
                         onClick={handleSubmit}
-                        disabled={(!tableId && orderType === "dine_in") || selectedItems.filter(i => i.food_item_id).length === 0 || isSubmitting}
+                        disabled={(!tableId && orderType === "dine_in") || (orderType === "delivery" && !deliveryAddress.trim()) || selectedItems.filter(i => i.food_item_id).length === 0 || isSubmitting}
                         className="flex-1 sm:flex-none px-10 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2"
                       >
                         <ShoppingCart size={20} />
