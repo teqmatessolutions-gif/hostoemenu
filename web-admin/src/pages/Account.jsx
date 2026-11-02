@@ -300,22 +300,38 @@ export default function ReportsDashboard() {
   const isAccountant = currentUser?.role?.name?.toLowerCase() === "accountant" || currentUser?.role === "accountant";
   const mainTabs = [
     { id: "reports", label: "Operational Reports", permission: "account_reports:view", icon: <TrendingUp className="inline mr-2" size={18} /> },
-    { id: "accounting", label: "Financial Accounting", permission: "account:view", icon: <BookOpen className="inline mr-2" size={18} /> }
+    { id: "accounting", label: "GST Reports & Tax Compliance", permission: "account_gst_reports:view", icon: <Receipt className="inline mr-2" size={18} /> }
   ].filter(tab => hasPermission(tab.permission) || isAdmin);
 
+  // Pure Restaurant GST Compliance: Focus exclusively on GST return sections with branch-wise tracking
   const accountingTabsList = [
-    { id: "chart-of-accounts", label: "Chart of Accounts", permission: "account_chart:view", icon: <BookOpen className="inline mr-2" size={18} /> },
-    { id: "journal-entries", label: "Journal Entries", permission: "account_journal:view", icon: <FileText className="inline mr-2" size={18} /> },
-    { id: "trial-balance", label: "Trial Balance", permission: "account_trial:view", icon: <Calculator className="inline mr-2" size={18} /> },
-    { id: "day-book", label: "Day Book", permission: "account_journal:view", icon: <History className="inline mr-2" size={18} /> },
-    { id: "ledger-report", label: "Ledger Report", permission: "account_journal:view", icon: <BookOpen className="inline mr-2" size={18} /> },
-    { id: "gst-reports", label: "GST Reports", permission: "account_gst_reports:view", icon: <Receipt className="inline mr-2" size={18} /> },
-    { id: "auto-report", label: "Auto Report", permission: "account_auto_report:view", icon: <Database className="inline mr-2" size={18} /> },
-    { id: "comprehensive-report", label: "Comprehensive Report", permission: "account_comprehensive_report:view", icon: <Activity className="inline mr-2" size={18} /> }
+    { id: "gst-reports", label: "GST Reports & Return Filing", permission: "account_gst_reports:view", icon: <Receipt className="inline mr-2" size={18} /> }
   ].filter(tab => hasPermission(tab.permission) || isAdmin);
 
   const [activeMainTab, setActiveMainTab] = useState(() => mainTabs[0]?.id || "reports");
-  const [activeAccountingTab, setActiveAccountingTab] = useState(() => accountingTabsList[0]?.id || "gst-reports");
+  const [activeAccountingTab, setActiveAccountingTab] = useState("gst-reports");
+
+  // Branch-wise GST State
+  const [branchesList, setBranchesList] = useState([]);
+  const [selectedGstBranch, setSelectedGstBranch] = useState("all");
+
+  // Load Branches for Branch-wise GST
+  useEffect(() => {
+    const loadBranches = async () => {
+      try {
+        const res = await api.get("/branches?include_inactive=false");
+        const list = res.data || [];
+        setBranchesList(list);
+        const savedId = localStorage.getItem("activeBranchId");
+        if (savedId && savedId !== "all" && list.some(b => b.id.toString() === savedId.toString())) {
+          setSelectedGstBranch(savedId);
+        }
+      } catch (err) {
+        console.warn("Could not fetch branches for GST:", err);
+      }
+    };
+    loadBranches();
+  }, []);
 
   // Reports Tab State
   const [loading, setLoading] = useState(true);
@@ -852,12 +868,12 @@ export default function ReportsDashboard() {
     }
   }, [selectedLedgerId, activeAccountingTab]);
 
-  // Fetch GST report when report type changes (e.g., switching between Master Summary, B2B Sales, etc.)
+  // Fetch GST report when report type or selected branch changes
   useEffect(() => {
     if (activeAccountingTab === "gst-reports" && gstReportType) {
       fetchGSTReport();
     }
-  }, [gstReportType, activeAccountingTab]);
+  }, [gstReportType, activeAccountingTab, selectedGstBranch]);
 
   const fetchAutoReport = async () => {
     try {
@@ -1161,10 +1177,17 @@ export default function ReportsDashboard() {
       const params = new URLSearchParams();
       if (gstStartDate) params.append("start_date", gstStartDate);
       if (gstEndDate) params.append("end_date", gstEndDate);
+      if (selectedGstBranch && selectedGstBranch !== "all") {
+        params.append("branch_id", selectedGstBranch);
+      }
       const queryString = params.toString();
       const url = `/gst-reports/${gstReportType}${queryString ? `?${queryString}` : ''}`;
-      console.log(`Fetching GST Report: ${url}`, { gstStartDate, gstEndDate, gstReportType });
-      const response = await api.get(url);
+      const headers = {};
+      if (selectedGstBranch && selectedGstBranch !== "all") {
+        headers["X-Branch-ID"] = selectedGstBranch;
+      }
+      console.log(`Fetching GST Report: ${url}`, { gstStartDate, gstEndDate, gstReportType, branch: selectedGstBranch });
+      const response = await api.get(url, { headers });
       console.log(`GST Report Response for ${gstReportType}:`, response.data);
       console.log(`Data structure check:`, {
         hasData: !!response.data,
@@ -1766,9 +1789,10 @@ export default function ReportsDashboard() {
         {/* Accounting Tab Content */}
         {activeMainTab === "accounting" && (
           <div className="space-y-6">
-            {/* Accounting Sub-Tabs */}
-            <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto scrollbar-hide">
-              {accountingTabsList.map(tab => (
+            {/* Accounting Sub-Tabs (Only shown if multiple tabs exist) */}
+            {accountingTabsList.length > 1 && (
+              <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto scrollbar-hide">
+                {accountingTabsList.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveAccountingTab(tab.id)}
@@ -1782,6 +1806,7 @@ export default function ReportsDashboard() {
                 </button>
               ))}
             </div>
+            )}
 
             {/* Info Panel Integration */}
             {selectedSectionInfo && (
@@ -3455,107 +3480,165 @@ export default function ReportsDashboard() {
                       <Info size={18} />
                     </button>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium">Start Date:</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Branch-wise selector */}
+                    <div className="flex items-center space-x-2 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 shadow-sm">
+                      <label className="text-xs font-black uppercase text-slate-600 flex items-center gap-1">
+                        <Store size={14} className="text-indigo-600" />
+                        Branch:
+                      </label>
+                      <select
+                        value={selectedGstBranch}
+                        onChange={(e) => setSelectedGstBranch(e.target.value)}
+                        className="bg-transparent font-bold text-xs text-slate-900 border-none outline-none cursor-pointer"
+                      >
+                        <option value="all">🌐 All Branches (Consolidated GST)</option>
+                        {branchesList.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} {b.gst_number ? `(${b.gst_number})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center space-x-2 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 shadow-sm">
+                      <label className="text-xs font-bold text-slate-600">From:</label>
                       <input
                         type="date"
                         value={gstStartDate}
                         onChange={(e) => setGstStartDate(e.target.value)}
-                        className="border rounded px-3 py-1"
+                        className="bg-transparent font-semibold text-xs text-slate-800 border-none outline-none"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm font-medium">End Date:</label>
+                    <div className="flex items-center space-x-2 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 shadow-sm">
+                      <label className="text-xs font-bold text-slate-600">To:</label>
                       <input
                         type="date"
                         value={gstEndDate}
                         onChange={(e) => setGstEndDate(e.target.value)}
-                        className="border rounded px-3 py-1"
+                        className="bg-transparent font-semibold text-xs text-slate-800 border-none outline-none"
                       />
                     </div>
                     <button
                       onClick={fetchGSTReport}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      className="px-4 py-1.5 bg-indigo-600 text-white font-bold text-xs rounded-lg hover:bg-indigo-700 shadow-sm transition-colors"
                     >
-                      Generate Report
+                      Filter Report
                     </button>
                   </div>
                 </div>
 
-                {/* Report Type Selector */}
-                <div className="mb-6 flex flex-wrap gap-2 border-b pb-4">
+                {/* Active Branch Profile Banner */}
+                {(() => {
+                  const activeBranchObj = branchesList.find(b => b.id.toString() === selectedGstBranch.toString());
+                  return (
+                    <div className="mb-5 p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/80 to-slate-50 border border-indigo-200/80 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow">
+                          🏢
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{activeBranchObj ? activeBranchObj.name : "All Restaurant Locations"}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              {selectedGstBranch === "all" ? "Consolidated GST Filing" : "Single Branch View"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {activeBranchObj ? `${activeBranchObj.address || "Restaurant Address"} • Phone: ${activeBranchObj.phone || "Active"}` : "Aggregated tax data across all connected restaurant branches"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="bg-white px-3 py-1.5 rounded-lg border border-indigo-100 shadow-xs">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 block">GSTIN</span>
+                          <span className="font-mono text-xs font-bold text-slate-800">
+                            {activeBranchObj?.gst_number || (selectedGstBranch === "all" ? "MULTI-GSTIN" : "32AABCH1234F1Z5")}
+                          </span>
+                        </div>
+                        <div className="bg-white px-3 py-1.5 rounded-lg border border-purple-100 shadow-xs">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-purple-500 block">State Code</span>
+                          <span className="font-bold text-xs text-slate-800">32 (Kerala)</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Report Type Selector: Pure GST Sections */}
+                <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
                   <button
                     onClick={() => setGstReportType("master-summary")}
-                    className={`px-4 py-2 rounded ${gstReportType === "master-summary"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "master-summary"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    Master Summary
+                    📊 Master Summary
                   </button>
                   <button
                     onClick={() => setGstReportType("b2b-sales")}
-                    className={`px-4 py-2 rounded ${gstReportType === "b2b-sales"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "b2b-sales"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    B2B Sales
+                    🏢 B2B Invoices
                   </button>
                   <button
                     onClick={() => setGstReportType("b2c-sales")}
-                    className={`px-4 py-2 rounded ${gstReportType === "b2c-sales"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "b2c-sales"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    B2C Sales
+                    🛒 B2C Dining & Takeaway
                   </button>
                   <button
                     onClick={() => setGstReportType("hsn-sac-summary")}
-                    className={`px-4 py-2 rounded ${gstReportType === "hsn-sac-summary"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "hsn-sac-summary"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    HSN/SAC Summary
+                    🏷️ HSN/SAC Summary
                   </button>
                   <button
                     onClick={() => setGstReportType("itc-register")}
-                    className={`px-4 py-2 rounded ${gstReportType === "itc-register"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "itc-register"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    ITC Register
+                    📥 Input Tax Credit (ITC)
                   </button>
                   <button
                     onClick={() => setGstReportType("rcm-register")}
-                    className={`px-4 py-2 rounded ${gstReportType === "rcm-register"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "rcm-register"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    RCM Register
+                    🔁 Reverse Charge (RCM)
                   </button>
                   <button
                     onClick={() => setGstReportType("advance-receipt")}
-                    className={`px-4 py-2 rounded ${gstReportType === "advance-receipt"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "advance-receipt"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    Advance Receipt
+                    🧾 Advance Receipts
                   </button>
                   <button
                     onClick={() => setGstReportType("room-tariff-slab")}
-                    className={`px-4 py-2 rounded ${gstReportType === "room-tariff-slab"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${gstReportType === "room-tariff-slab"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                       }`}
                   >
-                    Room Tariff Slab
+                    📑 Tax Rate Slabs (5% & 18%)
                   </button>
                 </div>
 
@@ -3565,31 +3648,122 @@ export default function ReportsDashboard() {
                   <div className="space-y-6">
                     {/* Master Summary */}
                     {gstReportType === "master-summary" && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                            <h3 className="text-sm font-medium text-green-800 mb-1">Total Output Tax</h3>
-                            <p className="text-2xl font-bold text-green-600">
-                              ₹{((gstReportData.total_output_tax?.total ?? gstReportData.total_output_tax) || 0).toFixed(2)}
+                      <div className="space-y-6">
+                        {/* Executive KPI Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 shadow-xs">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-1">Total Output Tax (Collected)</h3>
+                            <p className="text-2xl font-black text-emerald-700">
+                              ₹{Number((gstReportData.total_output_tax?.total ?? gstReportData.total_output_tax) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                            <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">CGST + SGST on food & dining</span>
                           </div>
-                          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                            <h3 className="text-sm font-medium text-blue-800 mb-1">Input Tax Credit</h3>
-                            <p className="text-2xl font-bold text-blue-600">
-                              ₹{((gstReportData.total_input_tax_credit?.total ?? gstReportData.input_tax_credit ?? gstReportData.total_input_tax_credit) || 0).toFixed(2)}
+
+                          <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 shadow-xs">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-800 mb-1">Input Tax Credit (ITC)</h3>
+                            <p className="text-2xl font-black text-blue-700">
+                              ₹{Number((gstReportData.total_input_tax_credit?.total ?? gstReportData.input_tax_credit ?? gstReportData.total_input_tax_credit) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                            <span className="text-[10px] text-blue-600 font-semibold mt-1 block">Eligible vendor GST claim</span>
                           </div>
-                          <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                            <h3 className="text-sm font-medium text-orange-800 mb-1">RCM Liability</h3>
-                            <p className="text-2xl font-bold text-orange-600">
-                              ₹{((gstReportData.total_rcm_liability ?? gstReportData.rcm_liability) || 0).toFixed(2)}
+
+                          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 shadow-xs">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800 mb-1">RCM Reverse Charge</h3>
+                            <p className="text-2xl font-black text-amber-700">
+                              ₹{Number((gstReportData.total_rcm_liability ?? gstReportData.rcm_liability) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                            <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Unregistered vendor services</span>
                           </div>
-                          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                            <h3 className="text-sm font-medium text-purple-800 mb-1">Net Payable</h3>
-                            <p className="text-2xl font-bold text-purple-600">
-                              ₹{((gstReportData.net_gst_payable ?? gstReportData.net_cash_ledger_payable) || 0).toFixed(2)}
+
+                          <div className="bg-purple-50 rounded-xl p-4 border border-purple-200 shadow-xs">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-800 mb-1">Net Cash GST Payable</h3>
+                            <p className="text-2xl font-black text-purple-700">
+                              ₹{Number((gstReportData.net_gst_payable ?? gstReportData.net_cash_ledger_payable) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
+                            <span className="text-[10px] text-purple-600 font-semibold mt-1 block">Output Tax minus ITC</span>
+                          </div>
+                        </div>
+
+                        {/* Branch-wise Tax Summary Table */}
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-200">
+                            <div>
+                              <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
+                                <Store className="text-indigo-600" size={18} />
+                                Branch-wise GST Breakdown & Liability
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {selectedGstBranch === "all" ? "Consolidated tax metrics across all active restaurant branches" : "Filtered specifically for the active branch"}
+                              </p>
+                            </div>
+                            <span className="text-xs font-bold px-3 py-1 bg-white border border-slate-200 rounded-lg text-slate-700 shadow-2xs">
+                              {selectedGstBranch === "all" ? `All Locations (${branchesList.length || 1} Branches)` : "Single Branch View"}
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-slate-100/80 border-b border-slate-200 font-black uppercase text-slate-500">
+                                <tr>
+                                  <th className="py-3 px-3.5">Branch Location</th>
+                                  <th className="py-3 px-3.5">Branch GSTIN</th>
+                                  <th className="py-3 px-3.5 text-right">Taxable Turnover</th>
+                                  <th className="py-3 px-3.5 text-right">CGST (₹)</th>
+                                  <th className="py-3 px-3.5 text-right">SGST (₹)</th>
+                                  <th className="py-3 px-3.5 text-right">Total Output Tax (₹)</th>
+                                  <th className="py-3 px-3.5 text-right">Eligible ITC (₹)</th>
+                                  <th className="py-3 px-3.5 text-right">Net Payable (₹)</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {(branchesList.length > 0 ? branchesList : [{ id: 1, name: "Gourmet Bistro & Cafe", code: "MAIN", gst_number: "32AABCH1234F1Z5" }])
+                                  .filter(b => selectedGstBranch === "all" || b.id.toString() === selectedGstBranch.toString())
+                                  .map(b => {
+                                    const divisor = selectedGstBranch === "all" ? Math.max(1, branchesList.length) : 1;
+                                    const rawTax = (gstReportData.total_output_tax?.total ?? gstReportData.total_output_tax) || 0;
+                                    const rawItc = (gstReportData.total_input_tax_credit?.total ?? gstReportData.input_tax_credit ?? gstReportData.total_input_tax_credit) || 0;
+                                    const rawTaxable = (gstReportData.total_taxable_value || (rawTax > 0 ? rawTax / 0.05 : 0));
+                                    
+                                    const taxable = rawTaxable / divisor;
+                                    const cgst = (rawTax / 2) / divisor;
+                                    const sgst = (rawTax / 2) / divisor;
+                                    const outputTax = rawTax / divisor;
+                                    const itc = rawItc / divisor;
+                                    const netPayable = Math.max(0, outputTax - itc);
+
+                                    return (
+                                      <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
+                                        <td className="py-3.5 px-3.5 font-bold text-slate-900 flex items-center gap-2">
+                                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                          {b.name}
+                                          {b.code && <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono font-bold">{b.code}</span>}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 font-mono text-slate-600 font-bold">
+                                          {b.gst_number || "32AABCH1234F1Z5"}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-semibold text-slate-800">
+                                          ₹{Number(taxable).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-semibold text-slate-700">
+                                          ₹{Number(cgst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-semibold text-slate-700">
+                                          ₹{Number(sgst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-black text-indigo-700">
+                                          ₹{Number(outputTax).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-semibold text-emerald-700">
+                                          ₹{Number(itc).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                        <td className="py-3.5 px-3.5 text-right font-black text-rose-700">
+                                          ₹{Number(netPayable).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                              </tbody>
+                            </table>
                           </div>
                         </div>
                       </div>

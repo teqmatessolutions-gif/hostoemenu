@@ -2135,8 +2135,9 @@ def get_room_tariff_slab_report(
 def get_master_gst_summary(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
+    branch_id_param: Optional[str] = Query(None, alias="branch_id"),
     db: Session = Depends(get_db),
-    branch_id: int = Depends(get_branch_id),
+    branch_id: Optional[int] = Depends(get_branch_id),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -2194,6 +2195,18 @@ def get_master_gst_summary(
             ), 0).label('total_taxable_value'),
             func.coalesce(func.sum(func.coalesce(Checkout.tax_amount, 0)), 0).label('total_tax_amount')
         )
+        # Resolve branch filter (param takes priority over header context)
+        eff_branch = None
+        if branch_id_param and branch_id_param != "all":
+            try:
+                eff_branch = int(branch_id_param)
+            except:
+                eff_branch = None
+        elif branch_id is not None:
+            eff_branch = branch_id
+
+        if eff_branch is not None:
+            checkout_query = checkout_query.filter(Checkout.branch_id == eff_branch)
         if start_dt:
             checkout_query = checkout_query.filter(Checkout.checkout_date >= start_dt)
         if end_dt:
