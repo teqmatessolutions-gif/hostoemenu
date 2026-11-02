@@ -5,6 +5,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";
 import HostoLogo from "./components/HostoLogo";
+import AiInteractiveBackground from "./components/AiInteractiveBackground";
 
 export default function App() {
   const API = getApiBaseUrl();
@@ -531,10 +532,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* Hero Section (Appetizing Restaurant Design with Floating Food) */}
-          <section className="relative overflow-hidden py-14 lg:py-20 px-4 bg-gradient-to-b from-amber-50/40 via-white to-slate-50 border-b border-slate-200">
-            {/* Ambient Background Warm Culinary Orbs */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-gradient-to-tr from-amber-400/20 via-orange-300/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+          {/* Hero Section with AI Interactive Background */}
+          <AiInteractiveBackground className="bg-gradient-to-b from-amber-50/40 via-white to-slate-50 border-b border-slate-200 py-12 lg:py-16 px-4">
+            <section className="relative">
             <div className="max-w-5xl mx-auto text-center relative z-10">
               
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/70 border border-amber-300 text-amber-900 text-xs font-black uppercase tracking-wider mb-6">
@@ -687,6 +687,7 @@ export default function App() {
 
             </div>
           </section>
+          </AiInteractiveBackground>
 
 
 
