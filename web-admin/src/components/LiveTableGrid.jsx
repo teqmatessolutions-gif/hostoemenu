@@ -3,6 +3,7 @@ import api from '../services/api';
 import { useBranch } from '../contexts/BranchContext';
 import { toast } from 'react-hot-toast';
 import { QRCodeSVG } from 'qrcode.react';
+import { printTableBill } from '../utils/printBill';
 import { 
   UtensilsCrossed, Users, Receipt, Clock, CheckCircle2, 
   AlertCircle, RefreshCw, X, CreditCard, DollarSign, 
@@ -438,6 +439,15 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       </button>
 
                       <button
+                        onClick={() => printTableBill({ table: t, branch: activeBranch, isPaid: false })}
+                        className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 transition flex items-center gap-1 font-bold text-xs"
+                        title="Print Live Bill Receipt"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Bill</span>
+                      </button>
+
+                      <button
                         onClick={() => setQrModalTable(t)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
                         title="View Table QR Code"
@@ -543,29 +553,54 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setSettleModalTable(null)}
-                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSettling}
-                onClick={handleSettleBill}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95 flex items-center justify-center gap-1.5"
-              >
-                {isSettling ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Confirm & Free Table</span>
-                  </>
-                )}
-              </button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => printTableBill({ table: settleModalTable, branch: activeBranch, paymentMethod, isPaid: false })}
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 border border-slate-300"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Pre-Bill Slip</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isSettling}
+                  onClick={() => {
+                    printTableBill({ table: settleModalTable, branch: activeBranch, paymentMethod, isPaid: true });
+                    handleSettleBill();
+                  }}
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print & Settle</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSettleModalTable(null)}
+                  className="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isSettling}
+                  onClick={handleSettleBill}
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs uppercase tracking-wider transition shadow-md active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  {isSettling ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Settle & Free Table</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -620,3 +655,4 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
     </div>
   );
 }
+

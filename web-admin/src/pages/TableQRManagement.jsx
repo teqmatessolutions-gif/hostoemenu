@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../layout/DashboardLayout';
 import { useBranch } from '../contexts/BranchContext';
 import { QRCodeSVG } from 'qrcode.react';
+import { printTableBill } from '../utils/printBill';
+import { Receipt, CreditCard } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { 
@@ -17,6 +19,9 @@ export default function TableQRManagement() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTable, setEditingTable] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [settleModalTable, setSettleModalTable] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [isSettling, setIsSettling] = useState(false);
 
     const [tableFormData, setTableFormData] = useState({
         table_number: '',
@@ -48,8 +53,8 @@ export default function TableQRManagement() {
         try {
             setIsLoading(true);
             const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
-            const response = await api.get('/restaurant-tables', { headers });
-            setTables(response.data || []);
+            const response = await api.get('/restaurant-tables/live-status', { headers });
+            setTables(response.data?.tables || []);
         } catch (error) {
             console.error('Failed to load tables:', error);
             toast.error('Failed to load tables for this branch');
@@ -111,6 +116,24 @@ export default function TableQRManagement() {
             toast.error(error.response?.data?.detail || 'Operation failed');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleSettleBill = async () => {
+        if (!settleModalTable) return;
+        try {
+            setIsSettling(true);
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            await api.post(`/restaurant-tables/${settleModalTable.id}/settle`, {
+                payment_method: paymentMethod
+            }, { headers });
+            toast.success(`Table ${settleModalTable.table_number} bill settled and table marked Vacant!`);
+            setSettleModalTable(null);
+            fetchTables();
+        } catch (error) {
+            toast.error(error.response?.data?.detail || 'Failed to settle bill');
+        } finally {
+            setIsSettling(false);
         }
     };
 
@@ -227,7 +250,7 @@ export default function TableQRManagement() {
                     <div class="cta-text">SCAN FOR HOSTO EMENU</div>
                     <div class="sub-text">Point phone camera to view full menu and order instantly</div>
                     <div class="features-pill">
-                        <span>🍽️ Dine-in</span> • <span>🛵 Delivery</span> • <span>🛏️ Room Svc</span>
+                        <span>🍽️ Dine-in</span> • <span>🛵 Delivery</span> • <span>🛍️ Takeaway</span>
                     </div>
                     <div class="no-print" style="margin-top: 24px;">
                         <button onclick="window.print()" style="padding: 10px 24px; background: #6366f1; color: white; border: none; font-weight: bold; border-radius: 12px; cursor: pointer; font-size: 14px;">
@@ -497,6 +520,51 @@ export default function TableQRManagement() {
                                                 }`}>
                                                     {table.status}
                                                 </span>
+                                            </div>
+
+                                            {/* Live Dining & Billing Strip */}
+                                            <div className={`p-2.5 rounded-xl border mb-3 flex items-center justify-between ${
+                                                table.status === 'Occupied' 
+                                                    ? 'bg-rose-50 border-rose-200' 
+                                                    : table.status === 'Waiting for Bill'
+                                                    ? 'bg-amber-50 border-amber-200'
+                                                    : 'bg-emerald-50 border-emerald-200'
+                                            }`}>
+                                                <div>
+                                                    <span className={`text-[10px] font-black uppercase tracking-wider block ${
+                                                        table.status === 'Occupied' ? 'text-rose-700' : table.status === 'Waiting for Bill' ? 'text-amber-800' : 'text-emerald-700'
+                                                    }`}>
+                                                        {table.status === 'Occupied' ? '🔴 Dining' : table.status === 'Waiting for Bill' ? '🟡 Waiting Bill' : '🟢 Vacant'}
+                                                    </span>
+                                                    {table.current_bill_amount > 0 ? (
+                                                        <span className="text-xs font-black text-slate-900 block mt-0.5">
+                                                            Bill: ₹{Number(table.current_bill_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] text-slate-400 block">No active bill</span>
+                                                    )}
+                                                </div>
+
+                                                {(table.status === 'Occupied' || table.status === 'Waiting for Bill' || table.current_bill_amount > 0) && (
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => printTableBill({ table, branch: currentBranch, isPaid: false })}
+                                                            className="p-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-lg text-[10px] font-bold shadow-sm flex items-center gap-1"
+                                                            title="Print Dining Bill Slip"
+                                                        >
+                                                            <Receipt size={11} />
+                                                            <span>Bill</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSettleModalTable(table)}
+                                                            className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black shadow-sm flex items-center gap-1"
+                                                            title="Settle Bill & Free Table"
+                                                        >
+                                                            <CreditCard size={11} />
+                                                            <span>Settle</span>
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Table QR Stand Preview */}
