@@ -251,3 +251,4 @@ export const printTableBill = ({ table, branch, paymentMethod = 'Cash', isPaid =
   `);
   printWindow.document.close();
 };
+
