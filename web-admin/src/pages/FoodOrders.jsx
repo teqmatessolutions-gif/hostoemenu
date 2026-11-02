@@ -103,6 +103,7 @@ export default function FoodOrders() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [extraNotes, setExtraNotes] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -1384,19 +1385,25 @@ export default function FoodOrders() {
     }
 
     let finalDeliveryRequest = null;
+    const combinedNotes = (extraNotes.trim() || deliveryNotes.trim());
     if (orderType === "delivery") {
       const parts = [];
       if (deliveryCustomerName.trim()) parts.push(`Customer: ${deliveryCustomerName.trim()}`);
       if (deliveryPhone.trim()) parts.push(`Phone: ${deliveryPhone.trim()}`);
       if (deliveryAddress.trim()) parts.push(`Address: ${deliveryAddress.trim()}`);
-      if (deliveryNotes.trim()) parts.push(`Notes: ${deliveryNotes.trim()}`);
+      if (combinedNotes) parts.push(`Notes: ${combinedNotes}`);
       finalDeliveryRequest = parts.join(" | ");
     } else if (orderType === "room_service") {
       const parts = [];
       if (deliveryCustomerName.trim()) parts.push(`Guest: ${deliveryCustomerName.trim()}`);
       if (deliveryPhone.trim()) parts.push(`Phone: ${deliveryPhone.trim()}`);
-      if (deliveryNotes.trim()) parts.push(`Notes: ${deliveryNotes.trim()}`);
+      if (combinedNotes) parts.push(`Notes: ${combinedNotes}`);
       finalDeliveryRequest = parts.join(" | ");
+    } else {
+      // Dine In
+      if (combinedNotes) {
+        finalDeliveryRequest = `Kitchen Notes: ${combinedNotes}`;
+      }
     }
 
     const payload = {
@@ -1437,6 +1444,11 @@ export default function FoodOrders() {
       setAmount(0);
       setOrderType("dine_in");
       setDeliveryRequest("");
+      setDeliveryCustomerName("");
+      setDeliveryPhone("");
+      setDeliveryAddress("");
+      setDeliveryNotes("");
+      setExtraNotes("");
       setShowFoodOrderModal(false); // Close modal on success
 
       // Clear filters to ensure visibility
@@ -2795,6 +2807,23 @@ export default function FoodOrders() {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    {/* Extra Notes / Kitchen Cooking Instructions */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                          📝 Extra Cooking Note / Kitchen Instructions (Optional)
+                        </label>
+                        <span className="text-[10px] font-bold text-slate-400">Prints on Kitchen KOT</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. Less spicy, no onions, extra crispy, serve beverages first..."
+                        value={extraNotes}
+                        onChange={(e) => setExtraNotes(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-indigo-500 shadow-sm"
+                      />
                     </div>
                   </div>
 
