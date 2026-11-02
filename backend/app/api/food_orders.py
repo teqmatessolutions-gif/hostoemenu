@@ -124,14 +124,17 @@ def update_order(
     if not current_order:
         raise HTTPException(status_code=404, detail="Order not found")
         
-    # Auto-set prepared_by_id if moving to cooking
-    if order_update.status in ['cooking', 'accepted', 'preparing', 'ready'] and current_order.prepared_by_id is None:
-        chef_query = db.query(Employee).filter(Employee.user_id == current_user.id)
+    # Automatic employee assignment: whoever works on or completes the order gets assigned
+    if order_update.status in ['cooking', 'accepted', 'preparing', 'ready', 'completed', 'in_progress']:
+        emp_query = db.query(Employee).filter(Employee.user_id == current_user.id)
         if branch_id is not None:
-            chef_query = chef_query.filter(Employee.branch_id == branch_id)
-        chef_emp = chef_query.first()
-        if chef_emp:
-            order_update.prepared_by_id = chef_emp.id
+            emp_query = emp_query.filter(Employee.branch_id == branch_id)
+        acting_emp = emp_query.first()
+        if acting_emp:
+            if not current_order.prepared_by_id and not order_update.prepared_by_id:
+                order_update.prepared_by_id = acting_emp.id
+            if not current_order.assigned_employee_id and not order_update.assigned_employee_id:
+                order_update.assigned_employee_id = acting_emp.id
 
     updated = crud.update_food_order(db, order_id, order_update, branch_id=branch_id)     
     return updated

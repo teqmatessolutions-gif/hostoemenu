@@ -2494,151 +2494,23 @@ export default function FoodOrders() {
 
                   {/* Modal Content */}
                   <div className="overflow-y-auto p-6 space-y-6">
-                    {/* Table and Kitchen Selection */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          {orderType === "dine_in" ? "Select Dining Table *" : "Table / Reference (Optional)"}
-                        </label>
-                        <select
-                          value={tableId}
-                          onChange={(e) => setTableId(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black font-semibold"
-                        >
-                          <option value="">{orderType === "dine_in" ? "Choose dining table..." : "Counter / Takeaway (No table)"}</option>
-                          {tables.map((table) => (
-                            <option key={table.id} value={table.id}>
-                              Table {table.table_number} ({table.seating_capacity || 4} Seats) - {table.status}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                          Assign to Kitchen (Optional) {employees.length > 0 && (
-                            <span className="text-xs text-gray-400 font-normal">
-                              ({(() => {
-                                const count = employees.filter(e => {
-                                  const r = (e.role || '').toLowerCase();
-                                  const n = (e.name || '').toLowerCase();
-                                  return r.includes('kitchen') || r.includes('kicthen') || r.includes('chef') || r.includes('cook') || r.includes('kitch') || r.includes('f&b') || r.includes('pantry') ||
-                                         n.includes('kitchen') || n.includes('kicthen') || n.includes('chef') || n.includes('cook') || n.includes('kitch');
-                                }).length;
-                                return count > 0 ? `${count} found` : `${employees.length} staff available`;
-                              })()})
-                            </span>
-                          )}
-                        </label>
-                        <select
-                          value={preparedById}
-                          onChange={(e) => setPreparedById(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black font-medium"
-                        >
-                          <option value="">Auto-Dispatch to Kitchen KOT / Display</option>
-                          {(() => {
-                            const isKitchen = (e) => {
-                              if (!e || !e.id) return false;
-                              const r = (e.role || '').toLowerCase();
-                              const n = (e.name || '').toLowerCase();
-                              return r.includes('kitchen') || r.includes('kicthen') || r.includes('chef') || r.includes('cook') || r.includes('kitch') || r.includes('f&b') || r.includes('pantry') ||
-                                     n.includes('kitchen') || n.includes('kicthen') || n.includes('chef') || n.includes('cook') || n.includes('kitch');
-                            };
-                            const kitchenStaff = employees.filter(isKitchen);
-                            const otherStaff = employees.filter(e => !isKitchen(e));
-                            
-                            if (kitchenStaff.length > 0) {
-                              return (
-                                <>
-                                  <optgroup label="Kitchen Staff &amp; Chefs">
-                                    {kitchenStaff.map(emp => {
-                                      const isOnline = emp.status === 'on_duty' || emp.is_clocked_in;
-                                      return (
-                                        <option key={emp.id} value={emp.id} style={{ color: isOnline ? "#16a34a" : "inherit", fontWeight: isOnline ? "bold" : "normal" }}>
-                                          {emp.name || `Chef ${emp.id}`} ({emp.role || 'Kitchen'}) {isOnline ? " 🟢 (Online)" : `(${emp.status || 'off_duty'})`}
-                                        </option>
-                                      );
-                                    })}
-                                  </optgroup>
-                                  {otherStaff.length > 0 && (
-                                    <optgroup label="Other Staff">
-                                      {otherStaff.map(emp => (
-                                        <option key={emp.id} value={emp.id}>
-                                          {emp.name} ({emp.role || 'Staff'})
-                                        </option>
-                                      ))}
-                                    </optgroup>
-                                  )}
-                                </>
-                              );
-                            }
-                            return employees.map(emp => (
-                              <option key={emp.id} value={emp.id}>
-                                {emp.name} ({emp.role || 'Staff'})
-                              </option>
-                            ));
-                          })()}
-                        </select>
-                      </div>
-                      {orderType === "room_service" && (
-                        <div className="md:col-span-2 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                          <label className="block text-sm font-bold text-indigo-900 mb-2">
-                            Assign Delivery Person * {employees.length > 0 && (
-                              <span className="text-xs text-indigo-700 font-normal">
-                                ({employees.length} staff available)
-                              </span>
-                            )}
-                          </label>
-                          <select
-                            value={employeeId}
-                            onChange={(e) => setEmployeeId(e.target.value)}
-                            className="w-full border border-indigo-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black font-medium bg-white"
-                          >
-                            <option value="">{employees.length === 0 ? "Searching for employees..." : "Choose a delivery person..."}</option>
-                            {(() => {
-                              const isDelivery = (e) => {
-                                if (!e || !e.id) return false;
-                                const r = (e.role || '').toLowerCase();
-                                const n = (e.name || '').toLowerCase();
-                                return r.includes('waiter') || r.includes('house') || r.includes('service') || r.includes('delivery') || r.includes('staff') || r.includes('operational') || r.includes('room') || r.includes('boy') ||
-                                       n.includes('waiter') || n.includes('delivery') || n.includes('room') || n.includes('boy');
-                              };
-                              const deliveryStaff = employees.filter(isDelivery);
-                              const otherStaff = employees.filter(e => !isDelivery(e));
-
-                              if (deliveryStaff.length > 0) {
-                                return (
-                                  <>
-                                    <optgroup label="Service &amp; Delivery Staff">
-                                      {deliveryStaff.map(emp => {
-                                        const isOnline = emp.status === 'on_duty' || emp.is_clocked_in;
-                                        return (
-                                          <option key={emp.id} value={emp.id} style={{ color: isOnline ? "#16a34a" : "inherit", fontWeight: isOnline ? "bold" : "normal" }}>
-                                            {emp.name} ({emp.role || 'Staff'}) {isOnline ? " 🟢 (Online)" : `(${emp.status || 'off_duty'})`}
-                                          </option>
-                                        );
-                                      })}
-                                    </optgroup>
-                                    {otherStaff.length > 0 && (
-                                      <optgroup label="Other Staff">
-                                        {otherStaff.map(emp => (
-                                          <option key={emp.id} value={emp.id}>
-                                            {emp.name} ({emp.role || 'Staff'})
-                                          </option>
-                                        ))}
-                                      </optgroup>
-                                    )}
-                                  </>
-                                );
-                              }
-                              return employees.map(emp => (
-                                <option key={emp.id} value={emp.id}>
-                                  {emp.name} ({emp.role || 'Staff'})
-                                </option>
-                              ));
-                            })()}
-                          </select>
-                        </div>
-                      )}
+                    {/* Table Selection */}
+                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm">
+                      <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
+                        {orderType === "dine_in" ? "Select Dining Table *" : "Table / Reference (Optional)"}
+                      </label>
+                      <select
+                        value={tableId}
+                        onChange={(e) => setTableId(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition text-slate-900 font-bold text-sm shadow-sm"
+                      >
+                        <option value="">{orderType === "dine_in" ? "Choose dining table..." : "Counter / Takeaway (No table)"}</option>
+                        {tables.map((table) => (
+                          <option key={table.id} value={table.id}>
+                            Table {table.table_number} ({table.seating_capacity || 4} Seats) · {table.status}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* Order Type Selection */}
