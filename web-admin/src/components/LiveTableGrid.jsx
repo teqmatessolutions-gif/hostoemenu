@@ -466,6 +466,12 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                         Waiting Bill
                       </span>
                     )}
+                    {isReserved && (
+                      <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-900 text-[11px] font-black px-2.5 py-1 rounded-full border border-purple-300 shadow-sm">
+                        <span className="w-2 h-2 rounded-full bg-purple-600 animate-pulse" />
+                        Reserved
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -560,7 +566,36 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
 
                 {/* Card Action Buttons */}
                 <div className="p-3 bg-white/70 border-t border-slate-100 flex items-center gap-1.5">
-                  {(isOccupied || isWaitingBill) ? (
+                  {isReserved ? (
+                    <>
+                      <button
+                        onClick={() => t.reservation ? handleSeatReservedGuests(t.reservation.id) : handleUpdateStatus(t.id, 'Occupied')}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2.5 rounded-xl transition flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        title="Seat the arriving reserved guest"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        <span>Seat Guests</span>
+                      </button>
+
+                      {t.reservation && (
+                        <button
+                          onClick={() => handleCancelReservation(t.reservation.id)}
+                          className="bg-slate-100 hover:bg-rose-100 text-slate-600 hover:text-rose-700 font-bold text-xs py-2 px-2.5 rounded-xl transition"
+                          title="Cancel Reservation"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setQrModalTable(t)}
+                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                        title="View Table QR Code"
+                      >
+                        <QrCode className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (isOccupied || isWaitingBill) ? (
                     <>
                       {isOccupied && (
                         <button

@@ -1899,29 +1899,45 @@ export default function FoodOrders() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-3xl font-extrabold text-indigo-700">🍽 Food & Beverage Management</h2>
-        </div>
+      <div className="p-4 sm:p-6 space-y-5">
+        {/* Sleek Minimal Page Header & Segmented Tabs */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl shadow-sm">
+              🍽️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black text-slate-900 tracking-tight">Food &amp; Dining Operations</h1>
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Sync
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                {currentBranch?.name || "Main Dining"} · Tabletop QR, Kitchen KOT &amp; POS Billing
+              </p>
+            </div>
+          </div>
 
-
-
-
-        {/* Tabs Navigation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
-          <div className="flex border-b border-gray-200">
-            {foodTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 font-medium transition-colors ${activeTab === tab.id
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900"
+          {/* Quick Segmented Nav Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+            {foodTabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3.5 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap active:scale-95 ${
+                    isActive
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
                   }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+                >
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -1979,140 +1995,77 @@ export default function FoodOrders() {
               </div>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-r from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Total Revenue</p>
-                    <p className="text-3xl font-bold mt-1">₹{(dashboardData.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            {/* Clean & Efficient Modern KPI Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Revenue</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                    ₹
                   </div>
-                  <div className="text-4xl opacity-80">💰</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    ₹{(dashboardData.totalRevenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-emerald-700 font-bold">₹{(dashboardData.averageOrderValue || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    <span>avg per order</span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Total Orders</p>
-                    <p className="text-3xl font-bold mt-1">{dashboardData.totalOrders}</p>
-                  </div>
-                  <div className="text-4xl opacity-80">📦</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-500 to-purple-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Completed Orders</p>
-                    <p className="text-3xl font-bold mt-1">{dashboardData.completedOrders}</p>
-                    <p className="text-xs opacity-75 mt-1">
-                      {dashboardData.totalOrders > 0
-                        ? ((dashboardData.completedOrders / dashboardData.totalOrders) * 100).toFixed(1)
-                        : 0}% completion rate
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">✅</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-orange-500 to-orange-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Items Sold</p>
-                    <p className="text-3xl font-bold mt-1">{dashboardData.totalItemsSold}</p>
-                  </div>
-                  <div className="text-4xl opacity-80">🍽️</div>
-                </div>
-              </div>
-            </div>
 
-            {/* Business Performance KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Total Profit</p>
-                    <p className="text-3xl font-bold mt-1">₹{(dashboardData.totalProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs opacity-75 mt-1">
-                      {(dashboardData.profitMargin || 0).toFixed(1)}% margin
-                    </p>
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Orders Handled</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm">
+                    📦
                   </div>
-                  <div className="text-4xl opacity-80">💵</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    {dashboardData.totalOrders}
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-blue-700 font-bold">{dashboardData.completedOrders} completed</span>
+                    <span>· {dashboardData.pendingOrders} pending</span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-red-500 to-red-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Total COGS</p>
-                    <p className="text-3xl font-bold mt-1">₹{(dashboardData.totalCOGS || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs opacity-75 mt-1">
-                      Cost of goods sold
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">📊</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-teal-500 to-teal-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Avg Order Value</p>
-                    <p className="text-3xl font-bold mt-1">₹{(dashboardData.averageOrderValue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs opacity-75 mt-1">
-                      Per completed order
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">📈</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-amber-500 to-amber-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Avg Profit</p>
-                    <p className="text-3xl font-bold mt-1">₹{(dashboardData.averageProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
-                    <p className="text-xs opacity-75 mt-1">
-                      Per order
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">🎯</div>
-                </div>
-              </div>
-            </div>
 
-            {/* Secondary KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-                    <p className="text-2xl font-bold text-yellow-600 mt-1">{dashboardData.pendingOrders}</p>
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Dishes Sold</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-sm">
+                    🍽️
                   </div>
-                  <div className="text-3xl">⏳</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    {dashboardData.totalItemsSold}
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-amber-800 font-bold">{dashboardData.dineInOrders} Dine-In</span>
+                    <span>· {dashboardData.deliveryOrders} Parcel</span>
+                  </div>
                 </div>
               </div>
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Dine In Orders</p>
-                    <p className="text-2xl font-bold text-blue-600 mt-1">{dashboardData.dineInOrders}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {dashboardData.totalOrders > 0
-                        ? ((dashboardData.dineInOrders / dashboardData.totalOrders) * 100).toFixed(1)
-                        : 0}% of total
-                    </p>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Profit & Margin</span>
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm">
+                    📈
                   </div>
-                  <div className="text-3xl">🍴</div>
                 </div>
-              </div>
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Takeaway &amp; Delivery</p>
-                    <p className="text-2xl font-bold text-indigo-600 mt-1">{dashboardData.deliveryOrders}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {dashboardData.totalOrders > 0
-                        ? ((dashboardData.deliveryOrders / dashboardData.totalOrders) * 100).toFixed(1)
-                        : 0}% of total
-                    </p>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    ₹{(dashboardData.totalProfit || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                   </div>
-                  <div className="text-3xl">🚚</div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-indigo-700 font-bold">{(dashboardData.profitMargin || 0).toFixed(1)}% margin</span>
+                    <span>· COGS ₹{(dashboardData.totalCOGS || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3718,91 +3671,34 @@ export default function FoodOrders() {
           <div className="space-y-6">
             {error && <div className="p-4 mb-4 text-center text-red-700 bg-red-100 border border-red-200 rounded-lg">{error}</div>}
 
-            {/* KPI Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <KpiCard title="Total Food Items" value={<CountUp end={totalFoodItemsCount} duration={1.5} />} color="bg-gradient-to-r from-green-500 to-green-700" icon={<UtensilsCrossed />} />
-              <KpiCard title="Item Categories" value={<CountUp end={totalCategoriesCount} duration={1.5} />} color="bg-gradient-to-r from-blue-500 to-blue-700" icon={<Package />} />
-              <KpiCard title="Items Available" value={<CountUp end={availableItemsCount} duration={1.5} />} color="bg-gradient-to-r from-purple-500 to-purple-700" icon={<CheckCircle />} />
-            </div>
-
-            {/* Business Performance KPIs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Avg Item Price</p>
-                    <p className="text-3xl font-bold mt-1">
-                      ₹{totalItems > 0
-                        ? (foodItems.reduce((sum, item) => sum + (parseFloat(item.price) || 0), 0) / totalItems).toLocaleString('en-IN', { maximumFractionDigits: 2 })
-                        : '0.00'}
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">💰</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-orange-500 to-orange-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Items with Recipes</p>
-                    <p className="text-3xl font-bold mt-1">
-                      {Object.keys(recipesData).length}
-                    </p>
-                    <p className="text-xs opacity-75 mt-1">
-                      {totalItems > 0 ? ((Object.keys(recipesData).length / totalItems) * 100).toFixed(1) : 0}% coverage
-                    </p>
-                  </div>
-                  <div className="text-4xl opacity-80">📋</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-pink-500 to-pink-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Time-based Pricing</p>
-                    <p className="text-3xl font-bold mt-1">
-                      {foodItems.filter(item => item.time_wise_prices && item.time_wise_prices.length > 0).length}
-                    </p>
-                    <p className="text-xs opacity-75 mt-1">Items with time pricing</p>
-                  </div>
-                  <div className="text-4xl opacity-80">⏰</div>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-cyan-500 to-cyan-700 rounded-xl shadow-lg p-6 text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">Takeaway / Parcel Items</p>
-                    <p className="text-3xl font-bold mt-1">
-                      {foodItems.filter(item => item.room_service_price).length}
-                    </p>
-                    <p className="text-xs opacity-75 mt-1">With takeaway / parcel pricing</p>
-                  </div>
-                  <div className="text-4xl opacity-80">🚚</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Food Item Management Section */}
-            <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+            {/* Simple & Clean Header Strip */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <div className="bg-indigo-100 p-2 rounded-lg">
-                    <ChefHat className="text-indigo-600" size={24} />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    <ChefHat className="w-5 h-5 text-amber-700" />
                   </div>
-                  Food Item Management
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">Manage your restaurant menu items and pricing</p>
-              </div>
-              <button
-                onClick={() => {
-                  resetFoodForm();
-                  setShowFoodItemModal(true);
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
-              >
-                <div className="bg-white/20 p-1 rounded-md group-hover:rotate-90 transition-transform">
-                  <Plus size={18} />
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight">Food Menu Catalog</h2>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {totalFoodItemsCount} Food Dishes · {totalCategoriesCount} Categories · {availableItemsCount} Available Live
+                    </p>
+                  </div>
                 </div>
-                <span>Add New Food Item</span>
-              </button>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => {
+                    resetFoodForm();
+                    setShowFoodItemModal(true);
+                  }}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-2.5 px-4 rounded-xl shadow-sm active:scale-95 transition flex items-center gap-1.5"
+                >
+                  <Plus size={16} className="text-amber-400" />
+                  <span>Add Food Dish</span>
+                </button>
+              </div>
             </div>
 
             {/* Food Item Management Modal */}
@@ -4162,20 +4058,34 @@ export default function FoodOrders() {
                 ) : (
                   filteredFoodItems.map((item) => (
                     <div key={item.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                      {/* Item Image */}
-                      {item.images && item.images.length > 0 && (
-                        <div className="relative h-40 bg-gray-100">
-                          <img
-                            src={getImageUrl(item.images[0].image_url)}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <span className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${item.available ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                            }`}>
-                            {item.available ? 'Available' : 'Unavailable'}
-                          </span>
-                        </div>
-                      )}
+                      {/* Item Image with Fallback */}
+                      <div className="relative h-40 bg-slate-100 overflow-hidden">
+                        {item.images && item.images.length > 0 ? (
+                          <>
+                            <img
+                              src={getImageUrl(item.images[0].image_url)}
+                              alt={item.name}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                if (e.target.nextElementSibling) e.target.nextElementSibling.style.display = 'flex';
+                              }}
+                              className="w-full h-full object-cover"
+                            />
+                            <div style={{ display: 'none' }} className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 text-3xl font-bold">
+                              🍽️
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 text-3xl font-bold">
+                            🍽️
+                          </div>
+                        )}
+                        <span className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          item.available ? 'bg-emerald-600 text-white shadow-sm' : 'bg-rose-600 text-white shadow-sm'
+                        }`}>
+                          {item.available ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
 
                       {/* Item Details */}
                       <div className="p-4">
