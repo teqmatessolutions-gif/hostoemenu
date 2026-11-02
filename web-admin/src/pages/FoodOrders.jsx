@@ -12,6 +12,7 @@ import { getImageUrl } from "../utils/imageUtils";
 import { getMediaBaseUrl } from "../utils/env";
 import { formatDateTimeIST, formatDateIST } from "../utils/dateUtils";
 import { normalizeQuantity } from "../utils/quantityValidation";
+import LiveTableGrid from "../components/LiveTableGrid";
 import { usePermissions } from "../hooks/usePermissions";
 import { useBranch } from "../contexts/BranchContext";
 
@@ -24,13 +25,14 @@ export default function FoodOrders() {
   }, [branches, activeBranchId]);
 
   const foodTabs = [
+    { id: "tables", label: "Live Floor & Tables", icon: <UtensilsCrossed className="w-5 h-5" />, permission: "food_orders_list:view" },
+    { id: "orders", label: "Dine-in & Orders", icon: <ShoppingCart className="w-5 h-5" />, permission: "food_orders_list:view" },
+    { id: "requests", label: "Kitchen KOT Dispatch", icon: <Truck className="w-5 h-5" />, permission: "food_orders_requests:view" },
     { id: "dashboard", label: "Analytics", icon: <TrendingUp className="w-5 h-5" />, permission: "food_orders_dashboard:view" },
-    { id: "orders", label: "Room & Dine-in Orders", icon: <ShoppingCart className="w-5 h-5" />, permission: "food_orders_list:view" },
-    { id: "requests", label: "Order Requests", icon: <Truck className="w-5 h-5" />, permission: "food_orders_requests:view" },
     { id: "management", label: "Menu Management", icon: <ChefHat className="w-5 h-5" />, permission: "food_orders_management:view" },
   ].filter(tab => hasPermission(tab.permission) || isAdmin);
 
-  const [activeTab, setActiveTab] = useState(() => foodTabs[0]?.id || "dashboard");
+  const [activeTab, setActiveTab] = useState(() => "tables");
 
   // Set active tab based on route
   useEffect(() => {
@@ -1918,6 +1920,11 @@ export default function FoodOrders() {
             ))}
           </div>
         </div>
+
+        {/* Live Table Floor Preview Tab */}
+        {activeTab === "tables" && (
+          <LiveTableGrid onNavigateToOrder={() => setActiveTab("orders")} />
+        )}
 
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
