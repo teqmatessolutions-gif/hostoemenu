@@ -206,7 +206,7 @@ export default function SuperAdminDashboard() {
             max_staff_users: 10,
             description: "",
             badge: "",
-            features: "dashboard\nroom_management\nbooking_engine\nqr_menu\nstaff_management\nguest_portal",
+            features: "dashboard\nqr_table_ordering\nkitchen_kot_display\nfood_menu_catalog\nbilling_pos_gst\nstaff_management\ninventory_ingredients\nreports_analytics",
             is_active: true,
             update_existing_tenants: false
         });
@@ -1148,9 +1148,9 @@ export default function SuperAdminDashboard() {
                                                 {/* Quotas & Limits Grid */}
                                                 <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                                                     <div>
-                                                        <span className="text-[10px] text-gray-400 block font-medium">Max Rooms</span>
+                                                        <span className="text-[10px] text-gray-400 block font-medium">Max Tables</span>
                                                         <span className="font-bold text-gray-800">
-                                                            {plan.max_rooms >= 999 ? "Unlimited" : `${plan.max_rooms} Rooms`}
+                                                            {plan.max_rooms >= 999 ? "Unlimited" : `${plan.max_rooms} Tables`}
                                                         </span>
                                                     </div>
                                                     <div>
@@ -2224,7 +2224,7 @@ export default function SuperAdminDashboard() {
                                 {/* Quotas / Limits */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1">Max Rooms Limit</label>
+                                        <label className="block text-xs font-bold text-gray-700 mb-1">Max Tables Limit (Dining Tables)</label>
                                         <input
                                             type="number"
                                             min="1"
@@ -2233,7 +2233,7 @@ export default function SuperAdminDashboard() {
                                             className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all font-semibold"
                                             placeholder="15"
                                         />
-                                        <span className="text-[10px] text-gray-400 mt-0.5 block">Use 999 for unlimited</span>
+                                        <span className="text-[10px] text-gray-400 mt-0.5 block">Use 999 for unlimited tables</span>
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-700 mb-1">Max Branches</label>
@@ -2257,7 +2257,7 @@ export default function SuperAdminDashboard() {
                                             className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all font-semibold"
                                             placeholder="5"
                                         />
-                                        <span className="text-[10px] text-gray-400 mt-0.5 block">Use 999 for unlimited</span>
+                                        <span className="text-[10px] text-gray-400 mt-0.5 block">Use 999 for unlimited tables</span>
                                     </div>
                                 </div>
 
@@ -2270,7 +2270,7 @@ export default function SuperAdminDashboard() {
                                             value={planFormData.badge}
                                             onChange={(e) => setPlanFormData({ ...planFormData, badge: e.target.value })}
                                             className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
-                                            placeholder="e.g. 10-15 Rooms, Most Popular, Unlimited"
+                                            placeholder="e.g. 15-30 Tables, Most Popular, Unlimited"
                                         />
                                         <span className="text-[10px] text-gray-400 mt-0.5 block">Highlight pill shown above or beside card</span>
                                     </div>
@@ -2281,7 +2281,7 @@ export default function SuperAdminDashboard() {
                                             value={planFormData.description}
                                             onChange={(e) => setPlanFormData({ ...planFormData, description: e.target.value })}
                                             className="w-full px-3.5 py-2 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
-                                            placeholder="e.g. Ideal for boutique resorts and homestays"
+                                            placeholder="e.g. Ideal for cafes, dining restaurants & cloud kitchens"
                                         />
                                     </div>
                                 </div>
@@ -2297,7 +2297,7 @@ export default function SuperAdminDashboard() {
                                         value={planFormData.features}
                                         onChange={(e) => setPlanFormData({ ...planFormData, features: e.target.value })}
                                         className="w-full px-3.5 py-2.5 text-xs font-mono border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
-                                        placeholder="Up to 15 Rooms Management&#10;Unlimited Guest Bookings &amp; Check-ins&#10;POS &amp; Food Order System&#10;QR Digital Menu for Guests&#10;WhatsApp Payment Support"
+                                        placeholder="Up to 15 Dining Tables QR Stand&#10;Live Kitchen Display (KOT) System&#10;POS &amp; GST Invoicing Counter&#10;Kitchen Inventory &amp; Stock Tracking&#10;Multi-Branch Management"
                                     />
                                     <p className="text-[11px] text-gray-400 mt-1">
                                         Enter each feature on a separate line. Properties will see these bullet points on their subscription page.
@@ -2483,7 +2483,7 @@ export default function SuperAdminDashboard() {
                                         >
                                             {saasPlans.map(plan => (
                                                 <option key={plan.id} value={plan.code}>
-                                                    {plan.name} — ₹{(plan.price_monthly || 0).toLocaleString()}/mo ({plan.max_rooms || 15} rooms)
+                                                    {plan.name} — ₹{(plan.price_monthly || 0).toLocaleString()}/mo ({plan.max_rooms || 15} tables)
                                                 </option>
                                             ))}
                                         </select>

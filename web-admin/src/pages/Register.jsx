@@ -75,7 +75,7 @@ export default function RegisterPage() {
       max_rooms: 9999,
       max_branches: 1,
       max_staff_users: 9999,
-      description: "Ideal for independent resorts, boutique hotels, and villas with unlimited rooms & users",
+      description: "Ideal for cafes, restaurants, and cloud kitchens with unlimited dining tables & staff accounts",
       badge: "STARTER"
     },
     {
@@ -811,7 +811,7 @@ export default function RegisterPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {displayedPlans.map((plan) => {
                   const isSelected = selectedPlan === plan.code;
-                  const roomText = plan.max_rooms >= 999 ? "Unlimited Rooms" : `Up to ${plan.max_rooms} Rooms`;
+                  const roomText = plan.max_rooms >= 999 ? "Unlimited Tables" : `Up to ${plan.max_rooms} Tables`;
                   const isFree = !plan.price_monthly || plan.price_monthly === 0;
 
                   return (
@@ -913,7 +913,7 @@ export default function RegisterPage() {
             The Complete Operating System for Modern Resorts
           </h2>
           <p className="mt-4 text-slate-300 max-w-lg text-base font-light leading-relaxed">
-            Tailor-made for independent resorts, luxury villas, and multi-property chains. Starting at <strong>₹{starterPlanPrice}/month for up to {starterPlanRooms} rooms</strong> with zero setup fees.
+            Tailor-made for cafes, standalone restaurants, and multi-outlet food chains. Starting at <strong>₹{starterPlanPrice}/month for up to {starterPlanRooms} dining tables</strong> with zero setup fees.
           </p>
         </div>
 
@@ -932,9 +932,9 @@ export default function RegisterPage() {
             </p>
           </div>
           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm space-y-2">
-            <div className="text-indigo-300 font-bold text-lg">QR In-Room Dining</div>
+            <div className="text-indigo-300 font-bold text-lg">QR Tabletop Ordering</div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Dynamic contactless guest room dining, amenities, and housekeeping requests right from their phone.
+              Dynamic contactless tabletop QR menus, live orders, and instant kitchen KOT dispatch.
             </p>
           </div>
           <div className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm space-y-2">

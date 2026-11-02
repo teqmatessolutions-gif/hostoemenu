@@ -544,7 +544,7 @@ export default function SubscriptionBilling() {
             <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-950 flex items-start gap-2.5">
               <Zap size={16} className="text-indigo-600 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
-                Need to upgrade rooms, connect additional channel managers, or switch to an annual plan with discounts? Contact Teqmates support anytime.
+                Need to upgrade dining tables, connect additional outlets, or switch to an annual plan with discounts? Contact Teqmates support anytime.
               </p>
             </div>
           </div>
@@ -620,12 +620,12 @@ export default function SubscriptionBilling() {
                     max_branches: 1,
                     max_staff_users: 9999,
                     badge: "STARTER",
-                    description: "Ideal for boutique resorts, villas, and homestays with unlimited rooms & users",
+                    description: "Ideal for cafes, restaurants, bars, and cloud kitchens with unlimited dining tables & users",
                     features: [
-                      "Unlimited Rooms Management",
+                      "Unlimited Tables Management",
                       "1 Branch Location (Single Property)",
                       "Unlimited Staff Users",
-                      "Dashboard & Visual Room Matrix",
+                      "Dashboard & Live Kitchen KOT Display",
                       "Booking Engine & QR Dining Menu",
                       "Restaurant POS, Food & Inventory",
                       "Guest Invoicing & Housekeeping"
@@ -643,7 +643,7 @@ export default function SubscriptionBilling() {
                     features: [
                       "Multi-Branch Central HQ Command",
                       "Unlimited Branches / Properties",
-                      "Unlimited Rooms Management",
+                      "Unlimited Tables Management",
                       "Unlimited Staff Users",
                       "Double-Entry Hotel Accounting & GST",
                       "HR Attendance & Payroll Engine",
@@ -678,7 +678,7 @@ export default function SubscriptionBilling() {
                       <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
                         isPopular ? "bg-indigo-800 text-indigo-200" : isEnterprise ? "bg-purple-100 text-purple-700" : "bg-slate-100 text-slate-700"
                       }`}>
-                        {plan.badge && !isPopular ? plan.badge : plan.max_rooms >= 999 ? "Unlimited" : `Up to ${plan.max_rooms || 15} Rooms`}
+                        {plan.badge && !isPopular ? plan.badge : plan.max_rooms >= 999 ? "Unlimited" : `Up to ${plan.max_rooms || 15} Tables`}
                       </span>
                     </div>
 

@@ -325,7 +325,7 @@ export default function SaasPlanEditor() {
                         <span className="text-sm font-black text-gray-800">{plan.max_branches}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-gray-400 uppercase font-bold block">Tables/Rooms</span>
+                        <span className="text-[10px] text-gray-400 uppercase font-bold block">Dining Tables</span>
                         <span className="text-sm font-black text-gray-800">{plan.max_rooms}</span>
                       </div>
                       <div>
@@ -485,7 +485,7 @@ export default function SaasPlanEditor() {
                   </div>
 
                   <div>
-                    <label className="font-bold text-gray-700 block mb-1">Max Tables / Rooms</label>
+                    <label className="font-bold text-gray-700 block mb-1">Max Dining Tables Limit</label>
                     <input
                       type="number"
                       required

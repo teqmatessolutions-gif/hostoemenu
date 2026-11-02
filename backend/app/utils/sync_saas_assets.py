@@ -107,7 +107,7 @@ def generate_brochure_cards_html(plans):
             infra_style = 'style="color: var(--primary);"'
             
         max_rooms = plan.get("max_rooms", 9999) or 9999
-        rooms_val = "Unlimited" if max_rooms >= 999 else f"{max_rooms} Rooms"
+        rooms_val = "Unlimited" if max_rooms >= 999 else f"{max_rooms} Tables"
         max_staff = plan.get("max_staff_users", 9999) or 9999
         staff_val = "Unlimited" if max_staff >= 999 else f"{max_staff} Users"
         
@@ -152,7 +152,7 @@ def generate_brochure_cards_html(plans):
                                 <span class="limit-val" {scope_style}>{scope_val}</span>
                             </div>
                             <div class="limit-col">
-                                <span class="limit-label">Max Rooms</span>
+                                <span class="limit-label">Max Tables</span>
                                 <span class="limit-val" style="color: #059669;">{rooms_val}</span>
                             </div>
                             <div class="limit-col">
@@ -234,7 +234,7 @@ def generate_landing_cards_html(plans):
             btn_class = "w-full block text-center py-3.5 text-xs font-extrabold uppercase tracking-wider rounded-xl text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-sm"
 
         max_rooms = plan.get("max_rooms", 9999) or 9999
-        rooms_val = "Unlimited Rooms" if max_rooms >= 999 else f"{max_rooms} Rooms"
+        rooms_val = "Unlimited Tables" if max_rooms >= 999 else f"{max_rooms} Tables"
         max_staff = plan.get("max_staff_users", 9999) or 9999
         staff_val = "Unlimited Users" if max_staff >= 999 else f"{max_staff} Staff Users"
         
@@ -279,7 +279,7 @@ def generate_landing_cards_html(plans):
 
                         <div class="{quota_box}">
                             <div><span class="text-[10px] text-slate-500 uppercase font-bold block tracking-wider">{scope_title}</span><strong class="{scope_val_class}">{scope_val_text}</strong></div>
-                            <div><span class="text-[10px] text-emerald-700 uppercase font-bold block tracking-wider">Max Rooms</span><strong class="text-emerald-700 text-sm">{rooms_val}</strong></div>
+                            <div><span class="text-[10px] text-emerald-700 uppercase font-bold block tracking-wider">Max Tables</span><strong class="text-emerald-700 text-sm">{rooms_val}</strong></div>
                             <div><span class="text-[10px] text-emerald-700 uppercase font-bold block tracking-wider">Staff Users</span><strong class="text-emerald-700 text-sm">{staff_val}</strong></div>
                             <div><span class="text-[10px] text-indigo-700 uppercase font-bold block tracking-wider">{infra_title}</span><strong class="{infra_val_class}">{infra_val}</strong></div>
                         </div>
