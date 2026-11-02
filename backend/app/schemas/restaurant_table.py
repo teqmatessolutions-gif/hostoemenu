@@ -7,12 +7,13 @@ class RestaurantTableBase(BaseModel):
     status: Optional[str] = "Available"  # "Available", "Occupied", "Reserved"
 
 class RestaurantTableCreate(RestaurantTableBase):
-    pass
+    branch_id: Optional[int] = None
 
 class RestaurantTableUpdate(BaseModel):
     table_number: Optional[str] = None
     seating_capacity: Optional[int] = None
     status: Optional[str] = None
+    branch_id: Optional[int] = None
 
 class RestaurantTableOut(RestaurantTableBase):
     id: int

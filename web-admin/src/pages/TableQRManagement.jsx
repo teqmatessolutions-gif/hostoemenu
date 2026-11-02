@@ -26,7 +26,8 @@ export default function TableQRManagement() {
 
     const currentBranch = activeBranch || branches.find(b => b.id.toString() === activeBranchId?.toString()) || (branches.length > 0 ? branches[0] : null);
     const branchName = currentBranch?.name || "Hosto eMenu";
-    const branchId = currentBranch?.id || activeBranchId;
+    const resolvedBranchId = currentBranch?.id || (activeBranchId !== 'all' ? activeBranchId : null) || (branches.length > 0 ? branches[0].id : null);
+    const branchId = resolvedBranchId ? parseInt(resolvedBranchId) : null;
 
     const getCustomerMenuBase = () => {
         const origin = window.location.origin;
@@ -46,7 +47,8 @@ export default function TableQRManagement() {
     const fetchTables = async () => {
         try {
             setIsLoading(true);
-            const response = await api.get('/restaurant-tables');
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            const response = await api.get('/restaurant-tables', { headers });
             setTables(response.data || []);
         } catch (error) {
             console.error('Failed to load tables:', error);
@@ -88,19 +90,19 @@ export default function TableQRManagement() {
 
         try {
             setIsSubmitting(true);
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            const payload = {
+                table_number: tableFormData.table_number.trim(),
+                seating_capacity: parseInt(tableFormData.seating_capacity) || 4,
+                status: tableFormData.status,
+                branch_id: branchId || undefined
+            };
+
             if (editingTable) {
-                await api.put(`/restaurant-tables/${editingTable.id}`, {
-                    table_number: tableFormData.table_number.trim(),
-                    seating_capacity: parseInt(tableFormData.seating_capacity) || 4,
-                    status: tableFormData.status
-                });
+                await api.put(`/restaurant-tables/${editingTable.id}`, payload, { headers });
                 toast.success(`Table "${tableFormData.table_number}" updated`);
             } else {
-                await api.post('/restaurant-tables', {
-                    table_number: tableFormData.table_number.trim(),
-                    seating_capacity: parseInt(tableFormData.seating_capacity) || 4,
-                    status: tableFormData.status
-                });
+                await api.post('/restaurant-tables', payload, { headers });
                 toast.success(`Table "${tableFormData.table_number}" created with QR Code`);
             }
             setIsModalOpen(false);
@@ -115,7 +117,8 @@ export default function TableQRManagement() {
     const handleDeleteTable = async (table) => {
         if (!window.confirm(`Are you sure you want to delete Table ${table.table_number}?`)) return;
         try {
-            await api.delete(`/restaurant-tables/${table.id}`);
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            await api.delete(`/restaurant-tables/${table.id}`, { headers });
             toast.success(`Table ${table.table_number} deleted`);
             fetchTables();
         } catch (error) {
