@@ -113,7 +113,7 @@ export default function App() {
       } else if (parts[1] === "room" && parts[2]) {
         const rId = parts[2].split("?")[0];
         setRoomId(rId);
-        setOrderType("room_service");
+        setOrderType("takeaway");
       }
     } else if (hash.startsWith("#/table/")) {
       const tId = hash.replace("#/table/", "").split("?")[0];
@@ -122,7 +122,7 @@ export default function App() {
     } else if (hash.startsWith("#/room/")) {
       const rId = hash.replace("#/room/", "").split("?")[0];
       setRoomId(rId);
-      setOrderType("room_service");
+      setOrderType("takeaway");
     }
   }, []);
 
@@ -161,6 +161,9 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           setPlans(data || []);
+          if (data && data.length > 0) {
+            setSelectedPlanCode(data[0].code);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch SaaS plans", err);
@@ -288,8 +291,8 @@ export default function App() {
       toast.error("Please enter Phone Number and Delivery Address.");
       return;
     }
-    if (orderType === "room_service" && !roomId) {
-      toast.error("Please enter your Room Number.");
+    if (orderType === "takeaway" && !customerPhone.trim()) {
+      toast.error("Please enter your Phone Number for pickup alerts.");
       return;
     }
 
@@ -297,17 +300,17 @@ export default function App() {
 
     let formattedDetails = "";
     if (orderType === "dine_in") {
-      formattedDetails = `Table ${tableId}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
-    } else if (orderType === "delivery") {
-      formattedDetails = `DELIVERY | Name: ${customerName || "Customer"} | Phone: ${customerPhone} | Address: ${deliveryAddress}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
+      formattedDetails = `Dine-In | Table ${tableId}${customerName ? ` | Guest: ${customerName}` : ""}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
+    } else if (orderType === "takeaway") {
+      formattedDetails = `TAKEAWAY / PICKUP | Guest: ${customerName || "Customer"} | Phone: ${customerPhone}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
     } else {
-      formattedDetails = `Room ${roomId}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
+      formattedDetails = `DELIVERY | Name: ${customerName || "Customer"} | Phone: ${customerPhone} | Address: ${deliveryAddress}${specialInstructions ? ` | Notes: ${specialInstructions}` : ""}`;
     }
 
     const payload = {
       branch_id: currentBranch?.id || null,
-      table_id: orderType === "dine_in" && tableId ? parseInt(tableId) : null,
-      room_id: orderType === "room_service" && roomId ? parseInt(roomId) : null,
+      table_id: orderType === "dine_in" && tableId ? (parseInt(tableId) || null) : null,
+      room_id: null,
       order_type: orderType,
       amount: subtotal,
       delivery_request: formattedDetails,
@@ -798,7 +801,7 @@ export default function App() {
                             </div>
                             <div className="bg-slate-50 p-2 rounded-xl">
                               <span className="text-[10px] text-slate-400 block font-bold uppercase">Max Tables</span>
-                              <span className="font-bold text-slate-800">{p.max_rooms}</span>
+                              <span className="font-bold text-slate-800">{p.max_rooms >= 999 ? "Unlimited" : p.max_rooms}</span>
                             </div>
                           </div>
 
@@ -1098,12 +1101,12 @@ export default function App() {
                   <span>🛵</span> Delivery
                 </button>
                 <button
-                  onClick={() => setOrderType("room_service")}
+                  onClick={() => setOrderType("takeaway")}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
-                    orderType === "room_service" ? "bg-amber-500 text-slate-950 font-black shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    orderType === "takeaway" ? "bg-amber-500 text-slate-950 font-black shadow-sm" : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  <span>🛏️</span> Room Service
+                  <span>🛍️</span> Takeaway
                 </button>
               </div>
 
@@ -1209,8 +1212,25 @@ export default function App() {
                           <p className="text-base font-black text-amber-600 mt-2">₹{price.toFixed(0)}</p>
                         </div>
 
-                        <div className="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center text-2xl flex-shrink-0 border border-slate-200">
-                          🍲
+                        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-slate-200 bg-slate-100 shadow-sm relative group">
+                          {((item.images && item.images.length > 0) ? (item.images[0].image_url?.startsWith("http") ? item.images[0].image_url : `${MEDIA}${item.images[0].image_url}`) : item.image_url) ? (
+                            <img
+                              src={(item.images && item.images.length > 0) ? (item.images[0].image_url?.startsWith("http") ? item.images[0].image_url : `${MEDIA}${item.images[0].image_url}`) : item.image_url}
+                              alt={item.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className={`w-full h-full flex items-center justify-center text-2xl ${
+                              ((item.images && item.images.length > 0) ? (item.images[0].image_url?.startsWith("http") ? item.images[0].image_url : `${MEDIA}${item.images[0].image_url}`) : item.image_url) ? "hidden" : "flex"
+                            }`}
+                          >
+                            🍲
+                          </div>
                         </div>
                       </div>
 
@@ -1316,16 +1336,28 @@ export default function App() {
                     </div>
                   </>
                 )}
-                {orderType === "room_service" && (
-                  <div>
-                    <label className="text-xs text-slate-700 font-bold block mb-1">Room Number *</label>
-                    <input
-                      type="text"
-                      placeholder="Room number"
-                      value={roomId}
-                      onChange={(e) => setRoomId(e.target.value)}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
-                    />
+                {orderType === "takeaway" && (
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-xs text-slate-700 font-bold block mb-1">Customer Name (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="Your name for pickup call"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-700 font-bold block mb-1">Mobile Number *</label>
+                      <input
+                        type="tel"
+                        placeholder="10-digit mobile number"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

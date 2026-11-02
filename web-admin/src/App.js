@@ -115,26 +115,14 @@ function App() {
                 <SuperAdminDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/bookings" element={
-              <ProtectedRoute requiredPermission="/bookings">
-                <Bookings />
-              </ProtectedRoute>
-            } />
-            <Route path="/rooms" element={
-              <ProtectedRoute requiredPermission="/rooms">
-                <CreateRooms />
-              </ProtectedRoute>
-            } />
+            {/* Bookings removed for eMenu */}
+            {/* Rooms removed for eMenu */}
             <Route path="/users" element={
               <ProtectedRoute requiredPermission="/users">
                 <Users />
               </ProtectedRoute>
             } />
-            <Route path="/services" element={
-              <ProtectedRoute requiredPermission="/services">
-                <Services />
-              </ProtectedRoute>
-            } />
+            {/* Services removed for eMenu */}
             <Route path="/expenses" element={
               <ProtectedRoute requiredPermission="/expenses">
                 <Expenses />
@@ -206,22 +194,8 @@ function App() {
               path="/accounting"
               element={<Navigate to="/account" replace />}
             />
-            <Route
-              path="/Userfrontend_data"
-              element={
-                <ProtectedRoute requiredPermission="/Userfrontend_data">
-                  <Userfrontend_data />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/packages"
-              element={
-                <ProtectedRoute requiredPermission="/package">
-                  <Package />
-                </ProtectedRoute>
-              }
-            />
+            {/* Userfrontend_data removed */}
+            {/* Packages removed */}
             <Route
               path="/report"
               element={
@@ -234,14 +208,7 @@ function App() {
               path="/reports"
               element={<Navigate to="/report" replace />}
             />
-            <Route
-              path="/guestprofiles"
-              element={
-                <ProtectedRoute requiredPermission="/guestprofiles">
-                  <GuestProfile />
-                </ProtectedRoute>
-              }
-            />
+            {/* GuestProfiles removed */}
             <Route
               path="/user-history"
               element={
@@ -274,14 +241,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/laundry"
-              element={
-                <ProtectedRoute requiredPermission="/inventory">
-                  <Laundry />
-                </ProtectedRoute>
-              }
-            />
+            {/* Laundry removed */}
             <Route
               path="/day-audit"
               element={
