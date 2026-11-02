@@ -410,7 +410,8 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
           {filteredTables.map((t) => {
             const isOccupied = t.status === 'Occupied';
             const isWaitingBill = t.status === 'Waiting for Bill';
-            const isReserved = t.status === 'Reserved' || (Boolean(t.reservation) && !isOccupied && !isWaitingBill);
+            const isReserved = t.status === 'Reserved' || (Boolean(t.reservation?.is_active_now) && !isOccupied && !isWaitingBill);
+            const hasUpcomingRes = Boolean(t.reservation) && !isReserved;
             const isVacant = t.status === 'Vacant' && !isReserved;
             const isExpanded = expandedTableId === t.id;
 
@@ -449,10 +450,18 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                   {/* Status Badge */}
                   <div>
                     {isVacant && (
-                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-1 rounded-full border border-emerald-200">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        Vacant
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-1 rounded-full border border-emerald-200">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          Vacant
+                        </span>
+                        {hasUpcomingRes && (
+                          <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-purple-200 shadow-sm" title={`Reserved for ${t.reservation.guest_name} at ${t.reservation.time}`}>
+                            <Clock className="w-3 h-3 text-purple-600" />
+                            Res {t.reservation.time}
+                          </span>
+                        )}
+                      </div>
                     )}
                     {isOccupied && (
                       <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[11px] font-black px-2.5 py-1 rounded-full border border-rose-300 shadow-sm animate-pulse">
@@ -554,12 +563,34 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       )}
                     </div>
                   ) : (
-                    <div className="py-6 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+                    <div className="py-2.5 text-center">
+                      <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1 text-base font-bold">
                         🍽️
                       </div>
-                      <p className="text-xs font-bold text-slate-600">Table is Vacant</p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">Ready for next dining guest</p>
+                      <p className="text-xs font-bold text-slate-700">Table is Vacant</p>
+                      <p className="text-[10px] text-slate-400">Ready for walk-in guest</p>
+
+                      {hasUpcomingRes && (
+                        <div className="mt-2 text-left bg-purple-50/90 rounded-2xl p-2.5 border border-purple-200/80 shadow-inner space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-purple-600" />
+                              Reserved at {t.reservation.time}
+                            </span>
+                            <span className="text-[10px] font-bold text-purple-900 bg-purple-200/70 px-1.5 py-0.5 rounded-full">
+                              👥 {t.reservation.guest_count}
+                            </span>
+                          </div>
+                          <p className="text-xs font-black text-slate-900 truncate">
+                            👤 {t.reservation.guest_name}
+                          </p>
+                          {t.reservation.guest_phone && (
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              📞 {t.reservation.guest_phone}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -656,24 +687,37 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                         className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2 px-2 rounded-xl transition flex items-center justify-center gap-1 shadow-sm active:scale-95"
                         title="Seat dining guests and take order"
                       >
-                        <span>🔴 Seat & Order</span>
+                        <UtensilsCrossed className="w-3.5 h-3.5" />
+                        <span>Seat &amp; Order</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          setAdminReserveTableId(t.id.toString());
-                          setIsAdminReserveOpen(true);
-                        }}
-                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 font-black text-xs py-2 px-2.5 rounded-xl border border-purple-200 transition flex items-center gap-1"
-                        title="Reserve Table"
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Reserve</span>
-                      </button>
+                      {hasUpcomingRes ? (
+                        <button
+                          onClick={() => handleSeatReservedGuests(t.reservation.id)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2.5 rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95"
+                          title={`Seat reserved guest (${t.reservation.guest_name}) if arrived early`}
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>Seat Guest</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setAdminReserveTableId(t.id.toString());
+                            setIsAdminReserveOpen(true);
+                          }}
+                          className="bg-purple-50 hover:bg-purple-100 text-purple-700 font-black text-xs py-2 px-2.5 rounded-xl border border-purple-200 transition flex items-center gap-1"
+                          title="Reserve Table"
+                        >
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Reserve</span>
+                        </button>
+                      )}
                       
                       <button
                         onClick={() => setQrModalTable(t)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 px-3 rounded-xl transition flex items-center gap-1"
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 px-2.5 rounded-xl transition flex items-center gap-1"
+                        title="View Table QR Code"
                       >
                         <QrCode className="w-3.5 h-3.5 text-slate-500" />
                         <span>QR</span>

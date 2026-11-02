@@ -48,7 +48,13 @@ def get_live_tables_status(
         RestaurantTable.branch_id == target_branch_id
     ).order_by(RestaurantTable.table_number.asc()).all()
 
-    # Check active reservations for target branch
+    # Timezone: IST (UTC+5:30) for reservation slot calculations
+    ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+    now_ist = datetime.datetime.now(datetime.timezone.utc).astimezone(ist)
+    today_str = now_ist.strftime("%Y-%m-%d")
+    current_time_minutes = now_ist.hour * 60 + now_ist.minute
+
+    # Check active confirmed reservations for target branch
     active_reservations = db.query(TableReservation).filter(
         TableReservation.branch_id == target_branch_id,
         TableReservation.status == "confirmed"
@@ -76,6 +82,24 @@ def get_live_tables_status(
     live_tables = []
     for t in tables:
         t_orders = orders_by_table.get(t.id, [])
+        # Check table reservation timing
+        t_res = reservations_by_table.get(t.id)
+        is_res_today = False
+        is_res_active_now = False
+        res_minutes_until = None
+
+        if t_res:
+            is_res_today = (t_res.reservation_date == today_str)
+            if is_res_today and t_res.reservation_time:
+                try:
+                    parts = t_res.reservation_time.split(":")
+                    res_minutes = int(parts[0]) * 60 + int(parts[1])
+                    res_minutes_until = res_minutes - current_time_minutes
+                    # Active reservation window: 45 mins before reservation time up to 90 mins after
+                    if -90 <= res_minutes_until <= 45:
+                        is_res_active_now = True
+                except Exception:
+                    pass
         total_bill = 0.0
         active_items = []
         guest_name = ""
@@ -110,12 +134,11 @@ def get_live_tables_status(
             else:
                 effective_status = "Occupied"
         else:
-            t_res = reservations_by_table.get(t.id)
-            if t_res:
+            if is_res_active_now:
                 effective_status = "Reserved"
-                if not guest_name:
+                if not guest_name and t_res:
                     guest_name = t_res.guest_name
-            elif t.status in ["Occupied", "Waiting for Bill", "Reserved"]:
+            elif t.status in ["Occupied", "Waiting for Bill"]:
                 effective_status = t.status
             else:
                 effective_status = "Vacant"
@@ -128,6 +151,9 @@ def get_live_tables_status(
             "guest_count": t_res_obj.guest_count,
             "date": t_res_obj.reservation_date,
             "time": t_res_obj.reservation_time,
+            "is_today": is_res_today,
+            "is_active_now": is_res_active_now,
+            "minutes_until": res_minutes_until,
             "notes": t_res_obj.special_notes
         } if t_res_obj else None
 

@@ -69,8 +69,26 @@ def create_reservation_admin(
         ).first()
         if not table:
             raise HTTPException(status_code=404, detail="Selected dining table not found")
-        # Mark table as Reserved
-        table.status = "Reserved"
+        # Only mark table status as Reserved if the reservation is occurring now
+        ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+        now_ist = datetime.datetime.now(datetime.timezone.utc).astimezone(ist)
+        today_str = now_ist.strftime("%Y-%m-%d")
+        current_time_minutes = now_ist.hour * 60 + now_ist.minute
+        
+        is_active_now = False
+        if payload.reservation_date == today_str and payload.reservation_time:
+            try:
+                parts = payload.reservation_time.split(":")
+                diff = (int(parts[0]) * 60 + int(parts[1])) - current_time_minutes
+                if -90 <= diff <= 45:
+                    is_active_now = True
+            except Exception:
+                pass
+
+        if is_active_now:
+            table.status = "Reserved"
+        elif table.status == "Reserved":
+            table.status = "Available"
 
     reservation = TableReservation(
         branch_id=target_branch,
