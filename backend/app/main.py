@@ -23,6 +23,7 @@ from app.api import (
     packages,
     room,
     restaurant_table,
+    table_reservation,
     user,
     auth,
     frontend,
@@ -324,6 +325,7 @@ app.include_router(service.router, prefix="/api", tags=["Service"])
 app.include_router(branch.router, prefix="/api", tags=["Branches"])
 app.include_router(service_request.router, prefix="/api", tags=["Service Requests"])
 app.include_router(restaurant_table.router, prefix="/api", tags=["Restaurant Tables"])
+app.include_router(table_reservation.router, prefix="/api", tags=["Table Reservations"])
 app.include_router(account.router, prefix="/api", tags=["Accounts"])
 app.include_router(gst_reports.router, prefix="/api", tags=["GST Reports"])
 

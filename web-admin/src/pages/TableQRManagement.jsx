@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { 
     QrCode, Plus, Edit2, Trash2, Printer, Copy, ExternalLink, 
     Users, Utensils, CheckCircle2, Clock, AlertCircle, Building2, 
-    Store, Sparkles, RefreshCw, X 
+    Store, Sparkles, RefreshCw, X, Calendar 
 } from 'lucide-react';
 
 export default function TableQRManagement() {
@@ -134,6 +134,29 @@ export default function TableQRManagement() {
             toast.error(error.response?.data?.detail || 'Failed to settle bill');
         } finally {
             setIsSettling(false);
+        }
+    };
+
+    const handleSeatReservedGuests = async (resId) => {
+        try {
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            const res = await api.post(`/table-reservations/${resId}/seat`, {}, { headers });
+            toast.success(res.data?.message || 'Guests seated successfully!');
+            fetchTables();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Failed to seat guest');
+        }
+    };
+
+    const handleCancelReservation = async (resId) => {
+        if (!window.confirm("Cancel this table reservation?")) return;
+        try {
+            const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+            await api.post(`/table-reservations/${resId}/cancel`, {}, { headers });
+            toast.success('Reservation cancelled and table made Available.');
+            fetchTables();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Failed to cancel reservation');
         }
     };
 
@@ -528,14 +551,21 @@ export default function TableQRManagement() {
                                                     ? 'bg-rose-50 border-rose-200' 
                                                     : table.status === 'Waiting for Bill'
                                                     ? 'bg-amber-50 border-amber-200'
+                                                    : table.status === 'Reserved'
+                                                    ? 'bg-purple-50 border-purple-200'
                                                     : 'bg-emerald-50 border-emerald-200'
                                             }`}>
                                                 <div>
                                                     <span className={`text-[10px] font-black uppercase tracking-wider block ${
-                                                        table.status === 'Occupied' ? 'text-rose-700' : table.status === 'Waiting for Bill' ? 'text-amber-800' : 'text-emerald-700'
+                                                        table.status === 'Occupied' ? 'text-rose-700' : table.status === 'Waiting for Bill' ? 'text-amber-800' : table.status === 'Reserved' ? 'text-purple-700' : 'text-emerald-700'
                                                     }`}>
-                                                        {table.status === 'Occupied' ? '🔴 Dining' : table.status === 'Waiting for Bill' ? '🟡 Waiting Bill' : '🟢 Vacant'}
+                                                        {table.status === 'Occupied' ? '🔴 Dining' : table.status === 'Waiting for Bill' ? '🟡 Waiting Bill' : table.status === 'Reserved' ? `🟣 Reserved ${table.reservation ? '@ ' + table.reservation.time : ''}` : '🟢 Vacant'}
                                                     </span>
+                                                    {table.reservation?.guest_name && (
+                                                        <span className="text-[11px] font-bold text-slate-800 block truncate max-w-[130px]">
+                                                            👤 {table.reservation.guest_name} ({table.reservation.guest_count}p)
+                                                        </span>
+                                                    )}
                                                     {table.current_bill_amount > 0 ? (
                                                         <span className="text-xs font-black text-slate-900 block mt-0.5">
                                                             Bill: ₹{Number(table.current_bill_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -545,6 +575,24 @@ export default function TableQRManagement() {
                                                     )}
                                                 </div>
 
+                                                {table.status === 'Reserved' && table.reservation && (
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => handleSeatReservedGuests(table.reservation.id)}
+                                                            className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black shadow-sm flex items-center gap-1"
+                                                            title="Seat Guests"
+                                                        >
+                                                            <span>🟢 Seat</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleCancelReservation(table.reservation.id)}
+                                                            className="p-1.5 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-300 rounded-lg text-[10px] font-bold"
+                                                            title="Cancel Reservation"
+                                                        >
+                                                            <X size={11} />
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 {(table.status === 'Occupied' || table.status === 'Waiting for Bill' || table.current_bill_amount > 0) && (
                                                     <div className="flex items-center gap-1">
                                                         <button

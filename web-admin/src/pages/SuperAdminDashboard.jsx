@@ -206,7 +206,7 @@ export default function SuperAdminDashboard() {
             max_staff_users: 10,
             description: "",
             badge: "",
-            features: "dashboard\nqr_table_ordering\nkitchen_kot_display\nfood_menu_catalog\nbilling_pos_gst\nstaff_management\ninventory_ingredients\nreports_analytics",
+            features: "dashboard\nqr_table_ordering\nkitchen_kot_display\nfood_menu_catalog\nbilling_pos_gst\ntable_reservations\nkitchen_inventory\nstaff_management\nreports_analytics",
             is_active: true,
             update_existing_tenants: false
         });
@@ -1018,9 +1018,9 @@ export default function SuperAdminDashboard() {
                         colorClass="bg-amber-500 text-amber-100"
                     />
                     <SuperAdminKPICard
-                        label="Global Room Occupancy"
+                        label="Live Dining Floor Occupancy"
                         value={`${globalSummary.occupied_rooms} / ${globalSummary.total_rooms}`}
-                        sub="Occupied vs Total Rooms"
+                        sub="Occupied Tables vs Total Tables"
                         icon={Briefcase}
                         colorClass="bg-cyan-500 text-cyan-100"
                     />
@@ -1041,7 +1041,7 @@ export default function SuperAdminDashboard() {
                                     </span>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-0.5">
-                                    Configure pricing, room limits, features, and badges for Starter, Growth, Enterprise, and Trial plans
+                                    Configure pricing, table limits, features, and badges for Starter, Growth, and Enterprise plans
                                 </p>
                             </div>
                         </div>

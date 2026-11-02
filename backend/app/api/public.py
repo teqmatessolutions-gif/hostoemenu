@@ -341,3 +341,71 @@ def create_public_service_request(request_data: ServiceRequestCreate, db: Sessio
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to submit service request: {str(e)}")
 
+
+
+# Public Table Reservation endpoint
+@router.post("/table-reservations")
+def create_public_table_reservation(
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    try:
+        from app.models.table_reservation import TableReservation
+        from app.models.restaurant_table import RestaurantTable
+        from app.models.branch import Branch
+
+        branch_id = payload.get("branch_id")
+        if not branch_id:
+            first_b = db.query(Branch).filter(Branch.is_active == True).first()
+            branch_id = first_b.id if first_b else 2
+
+        guest_count = int(payload.get("guest_count", 2))
+        table_id = payload.get("table_id")
+        
+        table = None
+        if table_id:
+            table = db.query(RestaurantTable).filter(RestaurantTable.id == table_id, RestaurantTable.branch_id == branch_id).first()
+        else:
+            table = db.query(RestaurantTable).filter(
+                RestaurantTable.branch_id == branch_id,
+                RestaurantTable.status.in_(["Available", "available", "Vacant"]),
+                RestaurantTable.seating_capacity >= guest_count
+            ).order_by(RestaurantTable.seating_capacity.asc()).first()
+            if table:
+                table_id = table.id
+
+        if table:
+            table.status = "Reserved"
+
+        reservation = TableReservation(
+            branch_id=branch_id,
+            table_id=table_id,
+            guest_name=payload.get("guest_name", "").strip(),
+            guest_phone=payload.get("guest_phone", "").strip(),
+            guest_email=payload.get("guest_email", "").strip() or None,
+            guest_count=guest_count,
+            reservation_date=payload.get("reservation_date"),
+            reservation_time=payload.get("reservation_time"),
+            status="confirmed",
+            special_notes=payload.get("special_notes")
+        )
+        db.add(reservation)
+        db.commit()
+        db.refresh(reservation)
+
+        return {
+            "success": True,
+            "id": reservation.id,
+            "reservation_id": reservation.id,
+            "message": f"Table reserved successfully for {reservation.guest_name}!",
+            "guest_name": reservation.guest_name,
+            "table_number": table.table_number if table else "Assigned upon arrival",
+            "reservation_date": str(reservation.reservation_date),
+            "reservation_time": str(reservation.reservation_time),
+            "guest_count": reservation.guest_count,
+            "special_notes": reservation.special_notes
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to reserve table: {str(e)}")

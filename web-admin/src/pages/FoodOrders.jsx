@@ -91,6 +91,8 @@ export default function FoodOrders() {
   const [foodItems, setFoodItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [roomId, setRoomId] = useState("");
+  const [tableId, setTableId] = useState("");
+  const [tables, setTables] = useState([]);
   const [employeeId, setEmployeeId] = useState("");
   const [preparedById, setPreparedById] = useState("");
   const [amount, setAmount] = useState(0);
@@ -475,7 +477,7 @@ export default function FoodOrders() {
           .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0)
       },
       {
-        name: "Room Service",
+        name: "Takeaway & Delivery",
         value: filteredOrders
           .filter(o => o.order_type === "room_service" && o.status === "completed")
           .reduce((sum, o) => sum + (parseFloat(o.amount) || 0), 0)
@@ -1101,8 +1103,8 @@ export default function FoodOrders() {
           console.error("Error fetching food orders:", err);
           return { data: [] };
         }),
-        api.get("/rooms?limit=1000").catch(err => {
-          console.error("Error fetching rooms:", err);
+        api.get("/restaurant-tables").catch(err => {
+          console.error("Error fetching tables:", err);
           return { data: [] };
         }),
         api.get("/employees?limit=1000").catch(err => {
@@ -1127,6 +1129,7 @@ export default function FoodOrders() {
         })
       ]);
       setOrders(ordersRes?.data || []);
+      setTables(roomsRes?.data || []);
       setHasMore((ordersRes?.data || []).length === 20);
       console.log("Food Orders - Employees fetched:", employeesRes?.data);
       setEmployees(Array.isArray(employeesRes?.data) ? employeesRes.data : []);
@@ -1347,13 +1350,14 @@ export default function FoodOrders() {
   };
 
   const handleSubmit = async () => {
-    if (!roomId || !preparedById || (orderType === "room_service" && !employeeId) || selectedItems.length === 0) {
-      alert("Please select room, kitchen assignment, " + (orderType === "room_service" ? "delivery person, " : "") + "and at least one food item.");
+    if ((orderType === "dine_in" && !tableId) || selectedItems.length === 0) {
+      alert("Please select a dining table and at least one food dish.");
       return;
     }
 
     const payload = {
-      room_id: parseInt(roomId),
+      table_id: tableId ? parseInt(tableId) : null,
+      room_id: null,
       billing_status: "unbilled",
       assigned_employee_id: orderType === "room_service" && employeeId ? parseInt(employeeId) : null,
       prepared_by_id: parseInt(preparedById),
@@ -1961,7 +1965,7 @@ export default function FoodOrders() {
                     <option value="all">All Types</option>
                     <option value="dine_in">Dine In</option>
                     <option value="delivery">Delivery</option>
-                    <option value="room_service">Room Service</option>
+                    <option value="room_service">Takeaway / Parcel</option>
                   </select>
                 </div>
                 <div className="flex items-end">
@@ -2100,7 +2104,7 @@ export default function FoodOrders() {
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Room Service</p>
+                    <p className="text-sm font-medium text-gray-600">Takeaway &amp; Delivery</p>
                     <p className="text-2xl font-bold text-indigo-600 mt-1">{dashboardData.deliveryOrders}</p>
                     <p className="text-xs text-gray-500 mt-1">
                       {dashboardData.totalOrders > 0
@@ -2528,25 +2532,23 @@ export default function FoodOrders() {
 
                   {/* Modal Content */}
                   <div className="overflow-y-auto p-6 space-y-6">
-                    {/* Room and Employee Selection */}
+                    {/* Table and Kitchen Selection */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Select Room *</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                          {orderType === "dine_in" ? "Select Dining Table *" : "Table / Reference (Optional)"}
+                        </label>
                         <select
-                          value={roomId}
-                          onChange={(e) => setRoomId(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black"
+                          value={tableId}
+                          onChange={(e) => setTableId(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 transition text-black font-semibold"
                         >
-                          <option value="">Choose a room...</option>
-                          {rooms.length === 0 ? (
-                            <option disabled>No checked-in rooms available</option>
-                          ) : (
-                            rooms.map((room) => (
-                              <option key={room.id} value={room.id}>
-                                Room {room.number || room.room_number || room.id} {room.guest_name ? `(${room.guest_name})` : ''}
-                              </option>
-                            ))
-                          )}
+                          <option value="">{orderType === "dine_in" ? "Choose dining table..." : "Counter / Takeaway (No table)"}</option>
+                          {tables.map((table) => (
+                            <option key={table.id} value={table.id}>
+                              Table {table.table_number} ({table.seating_capacity || 4} Seats) - {table.status}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -2721,8 +2723,8 @@ export default function FoodOrders() {
                             : "border-gray-200 hover:border-indigo-300 text-gray-600 bg-white"
                             }`}
                         >
-                          <Home size={18} />
-                          <span className="font-bold text-sm">Room Service</span>
+                          <ShoppingBag size={18} />
+                          <span className="font-bold text-sm">Takeaway / Parcel</span>
                         </button>
                       </div>
                     </div>
@@ -3767,11 +3769,11 @@ export default function FoodOrders() {
               <div className="bg-gradient-to-r from-cyan-500 to-cyan-700 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium opacity-90">Room Service Items</p>
+                    <p className="text-sm font-medium opacity-90">Takeaway / Parcel Items</p>
                     <p className="text-3xl font-bold mt-1">
                       {foodItems.filter(item => item.room_service_price).length}
                     </p>
-                    <p className="text-xs opacity-75 mt-1">With room service pricing</p>
+                    <p className="text-xs opacity-75 mt-1">With takeaway / parcel pricing</p>
                   </div>
                   <div className="text-4xl opacity-80">🚚</div>
                 </div>
@@ -3901,7 +3903,7 @@ export default function FoodOrders() {
                               </div>
                             </div>
                             <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Room Service (₹)</label>
+                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Takeaway / Parcel Price (₹)</label>
                               <div className="relative">
                                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
                                 <input
@@ -3991,7 +3993,7 @@ export default function FoodOrders() {
                           <div className="flex justify-between items-center mb-4">
                             <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                               <div className="w-1.5 h-4 bg-teal-500 rounded-full"></div>
-                              Room Service Extras
+                              Packaging & Parcel Extras
                             </h4>
                             <button
                               type="button"
@@ -4188,7 +4190,7 @@ export default function FoodOrders() {
                           </div>
                           {item.room_service_price && (
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-500">Room Service:</span>
+                              <span className="text-sm text-gray-500">Takeaway:</span>
                               <span className="font-semibold text-purple-600">₹{item.room_service_price}</span>
                             </div>
                           )}
@@ -4361,7 +4363,7 @@ export default function FoodOrders() {
                               <p className="text-2xl font-bold text-blue-900">₹{item.price}</p>
                             </div>
                             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                              <p className="text-xs text-purple-600 font-bold uppercase">Room Service</p>
+                              <p className="text-xs text-purple-600 font-bold uppercase">Takeaway</p>
                               <p className="text-2xl font-bold text-purple-900">₹{item.room_service_price || item.price}</p>
                             </div>
                           </div>
@@ -4532,7 +4534,7 @@ export default function FoodOrders() {
                           </h4>
                           {item.extra_inventory_items && item.extra_inventory_items.length > 0 ? (
                             <div className="space-y-3">
-                              <p className="text-xs text-gray-500 italic">These items are automatically consumed during room service or parcel orders.</p>
+                              <p className="text-xs text-gray-500 italic">These packaging items are automatically consumed during takeaway or delivery orders.</p>
                               {item.extra_inventory_items.map((extra, idx) => {
                                 const invItem = inventoryItemsList.find(inv => inv.id === extra.inventory_item_id);
                                 return (

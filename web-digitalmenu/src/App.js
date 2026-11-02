@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Utensils, ShoppingBag, Search, Plus, Minus, X, Check, Phone, MapPin, Clock, ArrowRight, Sparkles, Filter, AlertCircle, ChevronDown, Send, CheckCircle2, RotateCcw, ShieldCheck, Building2, QrCode, Receipt, Layers, Users, ExternalLink, ChevronRight, Star, HeartHandshake, Zap, CheckCircle, Bot, Flame, Leaf
+  Utensils, ShoppingBag, Search, Plus, Minus, X, Check, Phone, MapPin, Clock, ArrowRight, Sparkles, Filter, AlertCircle, ChevronDown, Send, CheckCircle2, RotateCcw, ShieldCheck, Building2, QrCode, Receipt, Layers, Users, ExternalLink, ChevronRight, Star, HeartHandshake, Zap, CheckCircle, Bot, Flame, Leaf, Calendar
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { getApiBaseUrl, getMediaBaseUrl } from "./utils/env";
@@ -22,6 +22,58 @@ export default function App() {
     message: ""
   });
   const [contactSubmitting, setContactSubmitting] = useState(false);
+
+  // Table Reservation State
+  const [showReserveModal, setShowReserveModal] = useState(false);
+  const [reserveSuccess, setReserveSuccess] = useState(null);
+  const [reserveLoading, setReserveLoading] = useState(false);
+  const [reserveForm, setReserveForm] = useState({
+    guest_name: "",
+    guest_phone: "",
+    guest_email: "",
+    guest_count: 2,
+    reservation_date: new Date().toISOString().split("T")[0],
+    reservation_time: "19:30",
+    special_notes: ""
+  });
+
+  const handleReserveTable = async (e) => {
+    e.preventDefault();
+    if (!reserveForm.guest_name.trim() || !reserveForm.guest_phone.trim()) {
+      toast.error("Please enter guest name and phone number");
+      return;
+    }
+    setReserveLoading(true);
+    try {
+      const payload = {
+        branch_id: selectedBranchId ? parseInt(selectedBranchId) : (branches.length > 0 ? branches[0].id : 2),
+        guest_name: reserveForm.guest_name.trim(),
+        guest_phone: reserveForm.guest_phone.trim(),
+        guest_email: reserveForm.guest_email.trim() || undefined,
+        guest_count: parseInt(reserveForm.guest_count) || 2,
+        reservation_date: reserveForm.reservation_date,
+        reservation_time: reserveForm.reservation_time,
+        special_notes: reserveForm.special_notes.trim() || undefined
+      };
+      const res = await fetch(`${API}/public/table-reservations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setReserveSuccess(data);
+        toast.success(`Table Reserved! ${data.table_number ? 'Table ' + data.table_number : ''}`);
+      } else {
+        toast.error(data.detail || "Unable to reserve table. Please call restaurant directly.");
+      }
+    } catch (err) {
+      console.error("Reservation failed:", err);
+      toast.error("Network error while booking table reservation.");
+    } finally {
+      setReserveLoading(false);
+    }
+  };
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -483,6 +535,16 @@ export default function App() {
           {/* Action CTAs */}
           <div className="flex items-center gap-2">
             <button
+              onClick={() => {
+                setReserveSuccess(null);
+                setShowReserveModal(true);
+              }}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black px-3.5 py-2 rounded-xl shadow-sm active:scale-95 transition"
+            >
+              <Calendar className="w-3.5 h-3.5 text-slate-950" />
+              <span>Book Table</span>
+            </button>
+            <button
               onClick={() => setShowPartnerModal(true)}
               className="hidden lg:flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl border border-slate-300 shadow-sm transition"
             >
@@ -555,6 +617,17 @@ export default function App() {
 
               {/* Action Buttons */}
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => {
+                    setReserveSuccess(null);
+                    setShowReserveModal(true);
+                  }}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg shadow-purple-500/20 active:scale-95 transition text-sm tracking-wide"
+                >
+                  <Calendar className="w-4 h-4 text-purple-200" />
+                  <span>📅 Reserve a Dining Table</span>
+                </button>
+
                 <button
                   onClick={() => openPlanJoinModal("growth")}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-6 py-3.5 rounded-2xl shadow-lg shadow-amber-500/20 active:scale-95 transition text-sm tracking-wide"
@@ -684,7 +757,7 @@ export default function App() {
                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                   <Layers className="w-5 h-5 text-amber-600 mb-1" />
                   <p className="font-bold text-slate-900 text-xs">3 Dining Modes</p>
-                  <p className="text-[11px] text-slate-500">Dine-In, Delivery & Room Service supported</p>
+                  <p className="text-[11px] text-slate-500">Dine-In, Delivery & Takeaway supported</p>
                 </div>
               </div>
 
@@ -762,7 +835,7 @@ export default function App() {
                   {/* Dynamic SaaS Plans (Super Admin Editable) */}
                   {(plans.length > 0 ? plans : [
                     { id: 1, name: "Starter Cafe", code: "starter", price_monthly: 999, max_branches: 1, max_rooms: 15, badge: "", description: "Perfect for single cafes & quick-service food outlets.", features: ["1 Restaurant Branch", "Up to 15 Dining Tables", "QR Code Menu & Ordering", "Kitchen Order Ticket (KOT)", "Standard Food Billing"] },
-                    { id: 2, name: "Growth Dine-In", code: "growth", price_monthly: 2499, max_branches: 3, max_rooms: 50, badge: "Most Popular", description: "For busy dining restaurants & multi-room boutique stays.", features: ["Up to 3 Branches", "Unlimited Dining Tables", "Dine-In, Delivery & Room Service", "GST Compliant Billing & Reports", "Automated WhatsApp Order Sync", "Live Inventory & Stock Alerts"] },
+                    { id: 2, name: "Growth Dine-In", code: "growth", price_monthly: 2499, max_branches: 3, max_rooms: 50, badge: "Most Popular", description: "For busy dining restaurants & multi-room boutique stays.", features: ["Up to 3 Branches", "Unlimited Dining Tables", "Dine-In, Delivery & Takeaway Ordering", "GST Compliant Billing & Reports", "Automated WhatsApp Order Sync", "Live Inventory & Stock Alerts"] },
                     { id: 3, name: "Enterprise Multi-Branch", code: "enterprise", price_monthly: 5999, max_branches: 99, max_rooms: 999, badge: "", description: "Multi-branch restaurant chains, franchises, and luxury hotels.", features: ["Unlimited Branches & Outlets", "Company & Tenant Hierarchy", "Advanced Recipe Costing & Waste Logs", "Custom Domain & White-label", "24/7 Dedicated Support Specialist"] }
                   ]).map((p) => {
                     const isHighlight = p.badge && p.badge.toLowerCase().includes("popular");
@@ -1110,7 +1183,18 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Seating / Room Badge */}
+              {/* Dining Table Seating Badge */}
+              <button
+                onClick={() => {
+                  setReserveSuccess(null);
+                  setShowReserveModal(true);
+                }}
+                className="flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 px-3 py-1 rounded-xl text-xs font-bold transition shadow-sm active:scale-95"
+              >
+                <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                <span>Reserve Table</span>
+              </button>
+
               {orderType === "dine_in" && (
                 <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl text-xs text-amber-800">
                   <span className="font-semibold">Table:</span>
@@ -1597,6 +1681,249 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+          {/* ── Table Reservation Modal ── */}
+      {showReserveModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-200 text-slate-900 animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-purple-500/20">
+                  <Calendar className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-lg">Reserve a Dining Table</h3>
+                  <p className="text-xs text-slate-500">
+                    {currentBranch?.name || "Hosto eMenu Dining"} · Instant Table Allocation
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowReserveModal(false);
+                  setReserveSuccess(null);
+                }}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* If reservation is confirmed */}
+            {reserveSuccess ? (
+              <div className="py-6 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-3xl font-black shadow-inner">
+                  ✓
+                </div>
+                <div>
+                  <span className="text-xs font-black uppercase text-emerald-700 tracking-wider bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                    Reservation Confirmed!
+                  </span>
+                  <h4 className="text-2xl font-black text-slate-900 mt-2">
+                    {reserveSuccess.table_number ? `Table ${reserveSuccess.table_number} Reserved` : 'Table Reserved'}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Booking #{reserveSuccess.id} · We look forward to hosting you!
+                  </p>
+                </div>
+
+                {/* Details Card */}
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left space-y-2.5 text-xs text-slate-700">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Guest Name:</span>
+                    <span className="font-extrabold text-slate-900">{reserveSuccess.guest_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Party Size:</span>
+                    <span className="font-extrabold text-slate-900">{reserveSuccess.guest_count} Guests</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Date & Time:</span>
+                    <span className="font-extrabold text-purple-700">
+                      {reserveSuccess.reservation_date} @ {reserveSuccess.reservation_time}
+                    </span>
+                  </div>
+                  {reserveSuccess.special_notes && (
+                    <div className="flex justify-between items-start pt-1 border-t border-slate-200">
+                      <span className="text-slate-500">Notes:</span>
+                      <span className="font-bold text-slate-800 text-right max-w-[200px]">{reserveSuccess.special_notes}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => {
+                      const msg = encodeURIComponent(
+                        `🍽️ *TABLE RESERVATION CONFIRMED* - ${currentBranch?.name || "Hosto eMenu"}\n` +
+                        `📌 *Reservation #:* ${reserveSuccess.id}\n` +
+                        `🪑 *Table:* ${reserveSuccess.table_number || "Allocated on arrival"}\n` +
+                        `👤 *Guest:* ${reserveSuccess.guest_name} (${reserveSuccess.guest_count} Guests)\n` +
+                        `📅 *Date & Time:* ${reserveSuccess.reservation_date} at ${reserveSuccess.reservation_time}`
+                      );
+                      window.open(`https://wa.me/?text=${msg}`, "_blank");
+                    }}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <span>💬 Share via WhatsApp</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowReserveModal(false);
+                      setReserveSuccess(null);
+                    }}
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-xl text-xs transition shadow-sm"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleReserveTable} className="py-4 space-y-4 text-xs">
+                {/* Branch Info */}
+                {branches.length > 1 && (
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Select Branch *</label>
+                    <select
+                      value={selectedBranchId || ""}
+                      onChange={(e) => setSelectedBranchId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>📍 {b.name} ({b.city || "Dining Branch"})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Date & Guest Count */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Reservation Date *</label>
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().split("T")[0]}
+                      value={reserveForm.reservation_date}
+                      onChange={(e) => setReserveForm(prev => ({ ...prev, reservation_date: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Number of Guests *</label>
+                    <select
+                      value={reserveForm.guest_count}
+                      onChange={(e) => setReserveForm(prev => ({ ...prev, guest_count: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20].map(n => (
+                        <option key={n} value={n}>{n} {n === 1 ? 'Guest (Solo)' : `${n} Guests`}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Time Slot Picker */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1.5">Preferred Time Slot *</label>
+                  <div className="grid grid-cols-4 gap-1.5 mb-2">
+                    {["12:30", "13:00", "13:30", "14:00", "19:00", "19:30", "20:00", "20:30"].map(t => {
+                      const [h, m] = t.split(":");
+                      const hr = parseInt(h);
+                      const display = `${hr > 12 ? hr - 12 : hr}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+                      const isSelected = reserveForm.reservation_time === t;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setReserveForm(prev => ({ ...prev, reservation_time: t }))}
+                          className={`py-1.5 px-2 rounded-xl text-[11px] font-bold border transition text-center ${
+                            isSelected 
+                              ? "bg-purple-600 text-white border-purple-600 shadow-sm" 
+                              : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          {display}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 font-medium">Or custom time:</span>
+                    <input
+                      type="time"
+                      value={reserveForm.reservation_time}
+                      onChange={(e) => setReserveForm(prev => ({ ...prev, reservation_time: e.target.value }))}
+                      className="bg-slate-50 border border-slate-300 rounded-lg px-2 py-1 text-xs text-slate-900 font-bold focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Guest Contact Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Guest Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Aarav Mehta"
+                      value={reserveForm.guest_name}
+                      onChange={(e) => setReserveForm(prev => ({ ...prev, guest_name: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Contact Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. 98765 43210"
+                      value={reserveForm.guest_phone}
+                      onChange={(e) => setReserveForm(prev => ({ ...prev, guest_phone: e.target.value }))}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Special Seating Request (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Window seat, anniversary, high chair for toddler..."
+                    value={reserveForm.special_notes}
+                    onChange={(e) => setReserveForm(prev => ({ ...prev, special_notes: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={reserveLoading}
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-500/20 active:scale-95 transition flex items-center justify-center gap-2 uppercase tracking-wider text-xs"
+                  >
+                    {reserveLoading ? (
+                      <span>Reserving Table...</span>
+                    ) : (
+                      <>
+                        <Calendar className="w-4 h-4 text-purple-200" />
+                        <span>Confirm Dining Reservation</span>
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-slate-400 text-center mt-2">
+                    ⚡ Real-time table hold. You will receive an instant table confirmation.
+                  </p>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

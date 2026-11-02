@@ -8,6 +8,7 @@ from app.models.user import User
 from app.models.branch import Branch
 from app.models.restaurant_table import RestaurantTable
 from app.models.foodorder import FoodOrder, FoodOrderItem
+from app.models.table_reservation import TableReservation
 from typing import List, Optional
 import datetime
 
@@ -46,6 +47,13 @@ def get_live_tables_status(
     tables = db.query(RestaurantTable).filter(
         RestaurantTable.branch_id == target_branch_id
     ).order_by(RestaurantTable.table_number.asc()).all()
+
+    # Check active reservations for target branch
+    active_reservations = db.query(TableReservation).filter(
+        TableReservation.branch_id == target_branch_id,
+        TableReservation.status == "confirmed"
+    ).all()
+    reservations_by_table = {r.table_id: r for r in active_reservations if r.table_id}
 
     # 2. All active orders for target branch
     active_orders = db.query(FoodOrder).options(
@@ -102,10 +110,26 @@ def get_live_tables_status(
             else:
                 effective_status = "Occupied"
         else:
-            if t.status in ["Occupied", "Waiting for Bill", "Reserved"]:
+            t_res = reservations_by_table.get(t.id)
+            if t_res:
+                effective_status = "Reserved"
+                if not guest_name:
+                    guest_name = t_res.guest_name
+            elif t.status in ["Occupied", "Waiting for Bill", "Reserved"]:
                 effective_status = t.status
             else:
                 effective_status = "Vacant"
+
+        t_res_obj = reservations_by_table.get(t.id)
+        reservation_info = {
+            "id": t_res_obj.id,
+            "guest_name": t_res_obj.guest_name,
+            "guest_phone": t_res_obj.guest_phone,
+            "guest_count": t_res_obj.guest_count,
+            "date": t_res_obj.reservation_date,
+            "time": t_res_obj.reservation_time,
+            "notes": t_res_obj.special_notes
+        } if t_res_obj else None
 
         live_tables.append({
             "id": t.id,
@@ -119,7 +143,8 @@ def get_live_tables_status(
             "seated_at": seated_time.isoformat() if seated_time else None,
             "guest_name": guest_name,
             "items": active_items,
-            "active_order_ids": [o.id for o in t_orders]
+            "active_order_ids": [o.id for o in t_orders],
+            "reservation": reservation_info
         })
 
     return {
@@ -129,6 +154,7 @@ def get_live_tables_status(
             "vacant": len([t for t in live_tables if t["status"] == "Vacant"]),
             "occupied": len([t for t in live_tables if t["status"] == "Occupied"]),
             "waiting_for_bill": len([t for t in live_tables if t["status"] == "Waiting for Bill"]),
+            "reserved": len([t for t in live_tables if t["status"] == "Reserved"]),
             "total_active_sales": round(sum(t["current_bill_amount"] for t in live_tables), 2)
         }
     }

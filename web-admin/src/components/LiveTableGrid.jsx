@@ -7,7 +7,7 @@ import { printTableBill } from '../utils/printBill';
 import { 
   UtensilsCrossed, Users, Receipt, Clock, CheckCircle2, 
   AlertCircle, RefreshCw, X, CreditCard, DollarSign, 
-  ChevronDown, ChevronUp, Search, QrCode, Sparkles, Printer, ExternalLink
+  ChevronDown, ChevronUp, Search, QrCode, Sparkles, Printer, ExternalLink, Calendar
 } from 'lucide-react';
 
 export default function LiveTableGrid({ onNavigateToOrder }) {
@@ -25,6 +25,83 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
 
   // QR Modal state
   const [qrModalTable, setQrModalTable] = useState(null);
+
+  // Admin Reservation Modal state
+  const [isAdminReserveOpen, setIsAdminReserveOpen] = useState(false);
+  const [adminReserveTableId, setAdminReserveTableId] = useState('');
+  const [adminReserveSubmitting, setAdminReserveSubmitting] = useState(false);
+  const [adminReserveForm, setAdminReserveForm] = useState({
+    guest_name: '',
+    guest_phone: '',
+    guest_email: '',
+    guest_count: 2,
+    reservation_date: new Date().toISOString().split('T')[0],
+    reservation_time: '19:30',
+    special_notes: ''
+  });
+
+  const handleSeatReservedGuests = async (resId) => {
+    try {
+      const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+      const res = await api.post(`/table-reservations/${resId}/seat`, {}, { headers });
+      toast.success(res.data?.message || 'Guests seated successfully!');
+      fetchLiveStatus(true);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to seat guest');
+    }
+  };
+
+  const handleCancelReservation = async (resId) => {
+    if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
+    try {
+      const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+      await api.post(`/table-reservations/${resId}/cancel`, {}, { headers });
+      toast.success('Reservation cancelled and table made Available.');
+      fetchLiveStatus(true);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to cancel reservation');
+    }
+  };
+
+  const handleAdminReserveSubmit = async (e) => {
+    e.preventDefault();
+    if (!adminReserveForm.guest_name.trim() || !adminReserveForm.guest_phone.trim()) {
+      toast.error('Please enter guest name and phone number');
+      return;
+    }
+    try {
+      setAdminReserveSubmitting(true);
+      const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+      const payload = {
+        branch_id: branchId,
+        table_id: adminReserveTableId ? parseInt(adminReserveTableId) : undefined,
+        guest_name: adminReserveForm.guest_name.trim(),
+        guest_phone: adminReserveForm.guest_phone.trim(),
+        guest_email: adminReserveForm.guest_email.trim() || undefined,
+        guest_count: parseInt(adminReserveForm.guest_count) || 2,
+        reservation_date: adminReserveForm.reservation_date,
+        reservation_time: adminReserveForm.reservation_time,
+        special_notes: adminReserveForm.special_notes.trim() || undefined
+      };
+      await api.post('/table-reservations', payload, { headers });
+      toast.success('Table reserved successfully!');
+      setIsAdminReserveOpen(false);
+      setAdminReserveForm({
+        guest_name: '',
+        guest_phone: '',
+        guest_email: '',
+        guest_count: 2,
+        reservation_date: new Date().toISOString().split('T')[0],
+        reservation_time: '19:30',
+        special_notes: ''
+      });
+      fetchLiveStatus(true);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create reservation');
+    } finally {
+      setAdminReserveSubmitting(false);
+    }
+  };
 
   const resolvedBranchId = activeBranch?.id || (activeBranchId !== 'all' ? activeBranchId : null) || (branches.length > 0 ? branches[0].id : 2);
   const branchId = resolvedBranchId ? parseInt(resolvedBranchId) : null;
@@ -101,6 +178,7 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
       if (filter === 'Vacant' && table.status !== 'Vacant') return false;
       if (filter === 'Occupied' && table.status !== 'Occupied') return false;
       if (filter === 'Waiting for Bill' && table.status !== 'Waiting for Bill') return false;
+      if (filter === 'Reserved' && table.status !== 'Reserved') return false;
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -137,7 +215,7 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
   return (
     <div className="space-y-6">
       {/* ── Summary & Floor Status Strip ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         
         {/* Total Tables */}
         <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
@@ -198,6 +276,22 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
           </div>
         </div>
 
+        {/* Reserved Tables */}
+        <div 
+          onClick={() => setFilter(filter === 'Reserved' ? 'all' : 'Reserved')}
+          className={`cursor-pointer rounded-2xl p-4 border transition-all shadow-sm flex items-center justify-between ${
+            filter === 'Reserved' ? 'bg-purple-50 border-purple-400 ring-2 ring-purple-300' : 'bg-white border-slate-200/80 hover:border-purple-300'
+          }`}
+        >
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700 block">🟣 Reserved</span>
+            <span className="text-2xl font-black text-purple-800 mt-0.5 block">{summary.reserved || 0}</span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+            <Calendar className="w-5 h-5" />
+          </div>
+        </div>
+
         {/* Active Dining Sales */}
         <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between col-span-2 lg:col-span-1">
           <div>
@@ -251,6 +345,15 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             Waiting for Bill ({summary.waiting_for_bill || 0})
           </button>
+          <button
+            onClick={() => setFilter('Reserved')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
+              filter === 'Reserved' ? 'bg-purple-700 text-white shadow' : 'bg-purple-50 text-purple-800 border border-purple-200 hover:bg-purple-100'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+            Reserved ({summary.reserved || 0})
+          </button>
         </div>
 
         {/* Search & Refresh */}
@@ -266,6 +369,18 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
             />
           </div>
           
+          <button
+            onClick={() => {
+              setAdminReserveTableId('');
+              setIsAdminReserveOpen(true);
+            }}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 text-xs font-black shadow-sm active:scale-95"
+            title="Create table reservation"
+          >
+            <Calendar className="w-4 h-4 text-purple-200" />
+            <span className="hidden sm:inline">Take Reservation</span>
+          </button>
+
           <button
             onClick={() => fetchLiveStatus(false)}
             className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition flex items-center gap-1 text-xs font-bold"
@@ -295,7 +410,8 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
           {filteredTables.map((t) => {
             const isOccupied = t.status === 'Occupied';
             const isWaitingBill = t.status === 'Waiting for Bill';
-            const isVacant = t.status === 'Vacant';
+            const isReserved = t.status === 'Reserved' || (Boolean(t.reservation) && !isOccupied && !isWaitingBill);
+            const isVacant = t.status === 'Vacant' && !isReserved;
             const isExpanded = expandedTableId === t.id;
 
             return (
@@ -306,6 +422,8 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                     ? 'bg-amber-50/50 border-amber-300 ring-2 ring-amber-200/50'
                     : isOccupied
                     ? 'bg-rose-50/40 border-rose-300 ring-2 ring-rose-200/40'
+                    : isReserved
+                    ? 'bg-purple-50/60 border-purple-300 ring-2 ring-purple-200/50'
                     : 'bg-white border-slate-200 hover:border-slate-300'
                 }`}
               >
@@ -353,7 +471,36 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
 
                 {/* Card Body: Bill & Details */}
                 <div className="p-4 flex-1">
-                  {(isOccupied || isWaitingBill) ? (
+                  {isReserved ? (
+                    <div>
+                      <div className="bg-white rounded-2xl p-3.5 border border-purple-200/90 shadow-sm space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-[10px] font-black uppercase text-purple-700 tracking-wider flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {t.reservation?.time || 'Booked Slot'}
+                          </span>
+                          <span className="text-[10px] font-extrabold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                            👥 {t.reservation?.guest_count || t.seating_capacity} Guests
+                          </span>
+                        </div>
+                        <div className="pt-1">
+                          <p className="font-black text-slate-900 text-sm">
+                            👤 {t.reservation?.guest_name || t.guest_name || 'Guest'}
+                          </p>
+                          {t.reservation?.guest_phone && (
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              📞 {t.reservation.guest_phone}
+                            </p>
+                          )}
+                          {t.reservation?.notes && (
+                            <p className="text-[11px] text-purple-900 bg-purple-50 p-2 rounded-xl border border-purple-100 mt-1 italic font-medium">
+                              "{t.reservation.notes}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (isOccupied || isWaitingBill) ? (
                     <div>
                       {/* Live Bill Highlight */}
                       <div className="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-inner mb-3">
@@ -462,6 +609,18 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                         className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2 px-2 rounded-xl transition flex items-center justify-center gap-1 shadow-sm active:scale-95"
                       >
                         <span>🔴 Seat Guests</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setAdminReserveTableId(t.id.toString());
+                          setIsAdminReserveOpen(true);
+                        }}
+                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 font-black text-xs py-2 px-2.5 rounded-xl border border-purple-200 transition flex items-center gap-1"
+                        title="Reserve Table"
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Reserve</span>
                       </button>
                       
                       <button
