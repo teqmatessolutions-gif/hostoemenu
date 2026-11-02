@@ -1943,7 +1943,11 @@ export default function FoodOrders() {
 
         {/* Live Table Floor Preview Tab */}
         {activeTab === "tables" && (
-          <LiveTableGrid onNavigateToOrder={() => setActiveTab("orders")} />
+          <LiveTableGrid onNavigateToOrder={(tblId) => {
+            if (tblId) setTableId(tblId.toString());
+            setOrderType("dine_in");
+            setShowFoodOrderModal(true);
+          }} />
         )}
 
         {/* Dashboard Tab */}

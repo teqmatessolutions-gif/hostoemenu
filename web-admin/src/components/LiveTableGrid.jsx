@@ -621,6 +621,15 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       </button>
 
                       <button
+                        onClick={() => onNavigateToOrder && onNavigateToOrder(t.id)}
+                        className="p-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition flex items-center gap-1 font-bold text-xs"
+                        title="Add Food Dishes to Table Order"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Order</span>
+                      </button>
+
+                      <button
                         onClick={() => printTableBill({ table: t, branch: activeBranch, isPaid: false })}
                         className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 transition flex items-center gap-1 font-bold text-xs"
                         title="Print Live Bill Receipt"
@@ -640,10 +649,14 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                   ) : (
                     <>
                       <button
-                        onClick={() => handleUpdateStatus(t.id, 'Occupied')}
+                        onClick={() => {
+                          handleUpdateStatus(t.id, 'Occupied');
+                          if (onNavigateToOrder) onNavigateToOrder(t.id);
+                        }}
                         className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2 px-2 rounded-xl transition flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                        title="Seat dining guests and take order"
                       >
-                        <span>🔴 Seat Guests</span>
+                        <span>🔴 Seat & Order</span>
                       </button>
 
                       <button
