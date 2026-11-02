@@ -2383,71 +2383,68 @@ export default function FoodOrders() {
         {/* Food Orders Tab */}
         {activeTab === "orders" && (
           <div className="space-y-6">
-            {/* Overview Section */}
-            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-100">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-indigo-600 rounded"></span>
-                Order Overview
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                  <p className="text-xs text-gray-500 mb-1">Total Orders</p>
-                  <p className="text-2xl font-bold text-indigo-600">{totalOrders}</p>
+            {/* Simple & Clean Single 4-Card Metric Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Sales</span>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm">₹</div>
                 </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                  <p className="text-xs text-gray-500 mb-1">Total Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">₹{totalRevenue.toLocaleString('en-IN')}</p>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                  <p className="text-xs text-gray-500 mb-1">Completed</p>
-                  <p className="text-2xl font-bold text-blue-600">{completedOrders}</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(0) : 0}% rate
-                  </p>
-                </div>
-                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                  <p className="text-xs text-gray-500 mb-1">Pending</p>
-                  <p className="text-2xl font-bold text-orange-600">{totalOrders - completedOrders}</p>
-                  <p className="text-xs text-gray-400 mt-1">Needs attention</p>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">₹{totalRevenue.toLocaleString('en-IN')}</div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-emerald-700 font-bold">₹{totalOrders > 0 ? (totalRevenue / totalOrders).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}</span>
+                    <span>avg / order</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-5 text-white shadow-md">
-                <p className="text-sm font-medium opacity-90 mb-1">Average Order Value</p>
-                <p className="text-2xl font-bold">
-                  ₹{totalOrders > 0 ? (totalRevenue / totalOrders).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '0'}
-                </p>
-                <p className="text-xs opacity-75 mt-1">Per order</p>
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Orders Handled</span>
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm">📦</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">{totalOrders}</div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-blue-700 font-bold">{completedOrders} completed</span>
+                    <span>· {totalOrders - completedOrders} active</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-5 text-white shadow-md">
-                <p className="text-sm font-medium opacity-90 mb-1">Items per Order</p>
-                <p className="text-2xl font-bold">
-                  {(() => {
-                    const totalItems = orders.reduce((sum, o) => sum + (o.items?.length || 0), 0);
-                    return totalOrders > 0 ? (totalItems / totalOrders).toFixed(1) : '0.0';
-                  })()}
-                </p>
-                <p className="text-xs opacity-75 mt-1">Average items</p>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Items per Order</span>
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-sm">🍽️</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    {(() => {
+                      const totalItems = orders.reduce((sum, o) => sum + (o.items?.length || 0), 0);
+                      return totalOrders > 0 ? (totalItems / totalOrders).toFixed(1) : '0.0';
+                    })()}
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-purple-700 font-bold">{orders.reduce((sum, o) => sum + (o.items?.length || 0), 0)} items</span>
+                    <span>total dishes</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg p-5 text-white shadow-md">
-                <p className="text-sm font-medium opacity-90 mb-1">Fulfillment Rate</p>
-                <p className="text-2xl font-bold">
-                  {totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(0) : 0}%
-                </p>
-                <p className="text-xs opacity-75 mt-1">Completion rate</p>
-              </div>
-              <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg p-5 text-white shadow-md">
-                <p className="text-sm font-medium opacity-90 mb-1">Revenue/Hour</p>
-                <p className="text-2xl font-bold">
-                  ₹{(() => {
-                    const hours = Math.max(1, Math.floor((new Date() - new Date(orders[0]?.created_at || Date.now())) / (1000 * 60 * 60)));
-                    return (totalRevenue / hours).toLocaleString('en-IN', { maximumFractionDigits: 0 });
-                  })()}
-                </p>
-                <p className="text-xs opacity-75 mt-1">Hourly average</p>
+
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-sm hover:border-slate-300 transition">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fulfillment Rate</span>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-sm">⚡</div>
+                </div>
+                <div className="mt-2">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight">
+                    {totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(0) : 0}%
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="text-amber-700 font-bold">{totalOrders - completedOrders === 0 ? "All Served" : `${totalOrders - completedOrders} in kitchen`}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2904,69 +2901,77 @@ export default function FoodOrders() {
                   </div>
                 ) : (
                   filteredOrders.map((order) => {
-                    const roomData = rooms.find((r) => r.id === order.room_id);
-                    // Normalize status to lowercase for robust matching
+                    const tableData = tables.find((t) => t.id === order.table_id);
+                    const tableNum = order.table_number || tableData?.table_number || (order.table_id ? `${order.table_id}` : null);
+                    const isTakeaway = order.order_type === "takeaway" || order.order_type === "room_service";
+                    const isDelivery = order.order_type === "delivery";
+                    const orderTitle = tableNum 
+                      ? `Table ${tableNum}` 
+                      : (isDelivery ? `Delivery #${order.id}` : (isTakeaway ? `Takeaway #${order.id}` : `Order #${order.id}`));
+                    
                     const rawStatus = (order.status || "").toLowerCase().trim();
                     const normalizedStatus = rawStatus === 'active' ? 'pending' : rawStatus;
+                    
                     return (
                       <div
                         key={order.id}
-                        className="bg-white rounded-lg shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all"
+                        className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-4 hover:shadow-md transition-all flex flex-col justify-between"
                       >
                         {/* Header */}
-                        <div className="flex justify-between items-start mb-3">
+                        <div className="flex justify-between items-start mb-3 pb-2.5 border-b border-slate-100">
                           <div>
-                            <h4 className="font-bold text-lg text-gray-800">
-                              Room {roomData?.number || roomData?.room_number || order.room_number || order.room_id}
-                            </h4>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-black text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
+                                <span>{tableNum ? "🍽️" : isDelivery ? "🛵" : "🛍️"}</span>
+                                {orderTitle}
+                              </h4>
+                              <span className="text-[11px] font-extrabold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                                #{order.id}
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5">
                               {order.created_at ? formatDateTimeIST(order.created_at) : 'N/A'}
                             </p>
                           </div>
-                          <div className="flex flex-col gap-2 items-end">
+                          <div className="flex flex-col gap-1.5 items-end">
                             <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${order.order_type === "delivery"
-                                ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                : order.order_type === "room_service"
-                                ? "bg-purple-100 text-purple-700 border border-purple-200"
-                                : "bg-blue-100 text-blue-700 border border-blue-200"
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${isDelivery
+                                ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                : isTakeaway
+                                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
                                 }`}
                             >
-                              {order.order_type === "delivery" ? "🛵 Delivery" : (order.order_type === "room_service" ? "🛏️ Room Service" : "🍽️ Dine In")}
+                              {isDelivery ? "🛵 Delivery" : (isTakeaway ? "🛍️ Takeaway" : "🍽️ Dine In")}
                             </span>
                             {normalizedStatus !== "cancelled" && (
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1">
                                 <span
-                                  className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm border ${order.billing_status === "paid"
-                                    ? "bg-emerald-500 text-white border-emerald-600"
-                                    : "bg-red-600 text-white border-red-700"
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${order.billing_status === "paid"
+                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                    : "bg-rose-100 text-rose-800 border border-rose-300"
                                     }`}
                                 >
-                                  {order.billing_status === "paid" ? <CheckCircle size={10} /> : <XCircle size={10} />}
-                                  {order.billing_status === "paid" ? "PAID" : "UNPAID"}
+                                  {order.billing_status === "paid" ? "🟢 Paid" : "🔴 Unpaid"}
                                 </span>
                                 {order.billing_status === "paid" && (
-                                  <span className="px-2 py-1 bg-white text-emerald-700 rounded-full text-[10px] font-black border border-emerald-200 shadow-sm uppercase">
+                                  <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold uppercase border border-slate-200">
                                     {order.payment_method || 'Cash'}
                                   </span>
                                 )}
                               </div>
                             )}
-                            <span
-                              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColors[normalizedStatus] || "bg-gray-100 text-gray-800"
-                                }`}
-                            >
-                              {normalizedStatus.replace("_", " ")}
-                            </span>
                           </div>
                         </div>
 
                         {/* Order Details */}
-                        <div className="space-y-2 mb-3 text-sm">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-500">Guest:</span>
-                            <span className="font-medium text-gray-800">{order.guest_name || "N/A"}</span>
-                          </div>
+                        <div className="space-y-1.5 mb-2.5 text-xs">
+                          {order.guest_name && (
+                            <div className="flex justify-between items-center bg-slate-50 px-2.5 py-1 rounded-lg">
+                              <span className="text-slate-500 font-medium">Guest:</span>
+                              <span className="font-bold text-slate-800">👤 {order.guest_name}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between items-center gap-2">
                             <span className="text-gray-500">Delivery:</span>
                             <select

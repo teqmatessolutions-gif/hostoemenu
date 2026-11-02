@@ -8,7 +8,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { 
     QrCode, Plus, Edit2, Trash2, Printer, Copy, ExternalLink, 
-    Users, Utensils, CheckCircle2, Clock, AlertCircle, Building2, 
+    Users, Utensils, CheckCircle2, Clock, AlertCircle, Building2, MapPin, 
     Store, Sparkles, RefreshCw, X, Calendar 
 } from 'lucide-react';
 
@@ -207,13 +207,34 @@ export default function TableQRManagement() {
                         border: 2px solid #e2e8f0;
                         box-sizing: border-box;
                     }
-                    .branch-name {
+                    .brand-badge {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 8px;
+                        background: #0f172a;
+                        color: #ffffff;
+                        padding: 8px 20px;
+                        border-radius: 999px;
+                        margin-bottom: 14px;
+                        box-shadow: 0 4px 12px rgba(15,23,42,0.15);
+                    }
+                    .brand-dot {
                         font-size: 14px;
-                        font-weight: 800;
+                    }
+                    .branch-name {
+                        font-size: 15px;
+                        font-weight: 900;
                         text-transform: uppercase;
                         letter-spacing: 2px;
-                        color: #6366f1;
-                        margin-bottom: 6px;
+                        color: #ffffff;
+                    }
+                    .branch-sub {
+                        font-size: 13px;
+                        font-weight: 800;
+                        text-transform: uppercase;
+                        letter-spacing: 1.5px;
+                        color: #4f46e5;
+                        margin: 2px 0 6px;
                     }
                     .table-title {
                         font-size: 32px;
@@ -265,12 +286,16 @@ export default function TableQRManagement() {
             </head>
             <body>
                 <div class="tent-card">
-                    <div class="branch-name">${branchName}</div>
+                    <div class="brand-badge">
+                        <span class="brand-dot">📍</span>
+                        <span class="branch-name">${branchName}</span>
+                    </div>
                     <h1 class="table-title">TABLE ${table.table_number}</h1>
                     <div class="qr-wrapper">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(tableUrl)}&format=svg" width="220" height="220" alt="QR Code" />
                     </div>
                     <div class="cta-text">SCAN FOR HOSTO EMENU</div>
+                    <div class="branch-sub">${branchName} · Table Service</div>
                     <div class="sub-text">Point phone camera to view full menu and order instantly</div>
                     <div class="features-pill">
                         <span>🍽️ Dine-in</span> • <span>🛵 Delivery</span> • <span>🛍️ Takeaway</span>
@@ -298,7 +323,10 @@ export default function TableQRManagement() {
             const tableUrl = getTableUrl(table);
             return `
                 <div class="tent-card">
-                    <div class="branch-name">${branchName}</div>
+                    <div class="brand-badge">
+                        <span class="brand-dot">📍</span>
+                        <span class="branch-name">${branchName}</span>
+                    </div>
                     <h1 class="table-title">TABLE ${table.table_number}</h1>
                     <div class="qr-wrapper">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(tableUrl)}&format=svg" width="180" height="180" alt="Table ${table.table_number} QR" />
@@ -453,7 +481,7 @@ export default function TableQRManagement() {
                             ⭐ Branch Master QR Code
                         </span>
                         <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                            Counter Stand & Takeaway QR
+                            {branchName} · Counter Stand & Takeaway QR
                         </h2>
                         <p className="text-indigo-200 text-sm leading-relaxed">
                             Place this QR code at your reception counter, cashier desk, or entrance. Customers scan to browse your full branch menu for dine-in, takeaway, or doorstep delivery.
@@ -527,9 +555,15 @@ export default function TableQRManagement() {
                                         <div>
                                             <div className="flex items-start justify-between mb-3">
                                                 <div>
-                                                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
-                                                        Table #{table.id}
-                                                    </span>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                                                            Table #{table.id}
+                                                        </span>
+                                                        <span className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1 border border-slate-200">
+                                                            <MapPin size={11} className="text-amber-500" />
+                                                            {branchName}
+                                                        </span>
+                                                    </div>
                                                     <h4 className="text-xl font-black text-gray-900 mt-1">
                                                         Table {table.table_number}
                                                     </h4>
@@ -620,8 +654,8 @@ export default function TableQRManagement() {
                                                 <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100">
                                                     <QRCodeSVG value={tableUrl} size={130} level="M" />
                                                 </div>
-                                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-2.5">
-                                                    Scan to Order at Table {table.table_number}
+                                                <p className="text-[11px] font-black text-slate-900 uppercase tracking-wider mt-2.5">
+                                                    Table {table.table_number} · <span className="text-indigo-600">{branchName}</span>
                                                 </p>
                                                 <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
                                                     <Users size={12} /> {table.seating_capacity || 4} Seats

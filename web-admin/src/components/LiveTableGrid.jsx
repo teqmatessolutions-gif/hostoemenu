@@ -8,7 +8,7 @@ import {
   UtensilsCrossed, Users, Receipt, Clock, CheckCircle2, 
   AlertCircle, RefreshCw, X, CreditCard, DollarSign, 
   ChevronDown, ChevronUp, Search, QrCode, Sparkles, Printer, ExternalLink, Calendar
-} from 'lucide-react';
+, Plus } from 'lucide-react';
 
 export default function LiveTableGrid({ onNavigateToOrder }) {
   const { activeBranchId, activeBranch, branches } = useBranch();
@@ -834,7 +834,10 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
               <span className="text-xs font-black uppercase text-amber-700 tracking-wider mt-3">
                 Table {qrModalTable.table_number} Stand
               </span>
-              <span className="text-[11px] text-slate-500">Scan to View Menu & Order</span>
+              <span className="text-xs font-extrabold text-slate-800 mt-0.5 flex items-center justify-center gap-1">
+                📍 {activeBranch?.name || "Main Dining"}
+              </span>
+              <span className="text-[11px] text-slate-500 mt-1">Scan to View Menu & Order</span>
             </div>
 
             <div className="flex gap-2">
