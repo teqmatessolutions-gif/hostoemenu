@@ -102,6 +102,7 @@ export default function FoodOrders() {
   const [deliveryPhone, setDeliveryPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryNotes, setDeliveryNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [hasMore, setHasMore] = useState(true);
@@ -1413,6 +1414,7 @@ export default function FoodOrders() {
       })),
     };
 
+    setIsSubmitting(true);
     try {
       const res = await api.post("/food-orders/", payload);
       toast.success("Order created successfully!");
@@ -1451,6 +1453,8 @@ export default function FoodOrders() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to submit order.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
