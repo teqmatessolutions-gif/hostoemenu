@@ -1,58 +1,26 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Sparkles, Flame, Leaf, Wine } from "lucide-react";
+import React, { useEffect, useRef } from "react";
 
 /**
- * Full-Page Silky Smooth AI Interactive Culinary Background
+ * Full-Page Silky Smooth Bistro Garden Interactive Culinary Background
  * - Native 60-120fps hardware-accelerated canvas with zero React re-render lag
  * - Fluid inertia-based cursor tracking with linear interpolation (LERP)
- * - Gentle particle repulsion with culinary sparks & aroma filaments across entire page
- * - Dynamic AI Culinary Moods: Sizzling Grill 🔥, Bistro Garden 🌿, Midnight Lounge 🍸
+ * - Gentle particle repulsion with Bistro Garden aroma motes & filaments across entire page
+ * - Fixed elegant Bistro Garden aesthetic (emerald & mint fresh culinary botanical aura)
  */
 export default function AiInteractiveBackground({ children, className = "" }) {
   const canvasRef = useRef(null);
-  const [ambientMood, setAmbientMood] = useState("sizzle"); // 'sizzle' | 'fresh' | 'midnight'
 
-  // Color schemes for each AI culinary mood
-  const moodThemes = useMemo(() => ({
-    sizzle: {
-      name: "Sizzling Grill",
-      icon: Flame,
-      particleColor: "rgba(245, 158, 11, ", // Amber-500
-      lineColor: "rgba(245, 158, 11, ",
-      accentHex: "#F59E0B",
-      auraCenter: "rgba(245, 158, 11, 0.16)",
-      auraMid: "rgba(239, 68, 68, 0.05)",
-      ambientGlow1: "rgba(245, 158, 11, 0.10)",
-      ambientGlow2: "rgba(239, 68, 68, 0.06)",
-      activeBg: "bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30",
-    },
-    fresh: {
-      name: "Fresh Garden Bistro",
-      icon: Leaf,
-      particleColor: "rgba(16, 185, 129, ", // Emerald-500
-      lineColor: "rgba(16, 185, 129, ",
-      accentHex: "#10B981",
-      auraCenter: "rgba(16, 185, 129, 0.16)",
-      auraMid: "rgba(59, 130, 246, 0.05)",
-      ambientGlow1: "rgba(16, 185, 129, 0.10)",
-      ambientGlow2: "rgba(59, 130, 246, 0.06)",
-      activeBg: "bg-emerald-500 text-white font-black shadow-md shadow-emerald-500/30",
-    },
-    midnight: {
-      name: "Midnight Lounge",
-      icon: Wine,
-      particleColor: "rgba(168, 85, 247, ", // Purple-500
-      lineColor: "rgba(168, 85, 247, ",
-      accentHex: "#8B5CF6",
-      auraCenter: "rgba(139, 92, 246, 0.18)",
-      auraMid: "rgba(236, 72, 153, 0.05)",
-      ambientGlow1: "rgba(139, 92, 246, 0.10)",
-      ambientGlow2: "rgba(236, 72, 153, 0.06)",
-      activeBg: "bg-purple-600 text-white font-black shadow-md shadow-purple-600/30",
-    },
-  }), []);
-
-  const currentTheme = moodThemes[ambientMood];
+  // Bistro Garden fixed theme
+  const theme = {
+    name: "Fresh Garden Bistro",
+    particleColor: "rgba(16, 185, 129, ", // Emerald-500
+    lineColor: "rgba(16, 185, 129, ",
+    accentHex: "#10B981",
+    auraCenter: "rgba(16, 185, 129, 0.16)",
+    auraMid: "rgba(59, 130, 246, 0.05)",
+    ambientGlow1: "rgba(16, 185, 129, 0.10)",
+    ambientGlow2: "rgba(59, 130, 246, 0.06)",
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -144,8 +112,8 @@ export default function AiInteractiveBackground({ children, className = "" }) {
             mouse.currentX, mouse.currentY, 0,
             mouse.currentX, mouse.currentY, 340
           );
-          aura.addColorStop(0, currentTheme.auraCenter);
-          aura.addColorStop(0.45, currentTheme.auraMid);
+          aura.addColorStop(0, theme.auraCenter);
+          aura.addColorStop(0.45, theme.auraMid);
           aura.addColorStop(1, "rgba(255, 255, 255, 0)");
           ctx.fillStyle = aura;
           ctx.fillRect(0, 0, width, height);
@@ -176,7 +144,7 @@ export default function AiInteractiveBackground({ children, className = "" }) {
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(mouse.currentX, mouse.currentY);
             const filamentAlpha = force * 0.38;
-            ctx.strokeStyle = `${currentTheme.lineColor}${filamentAlpha})`;
+            ctx.strokeStyle = `${theme.lineColor}${filamentAlpha})`;
             ctx.lineWidth = 1.1;
             ctx.stroke();
           }
@@ -207,7 +175,7 @@ export default function AiInteractiveBackground({ children, className = "" }) {
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `${currentTheme.lineColor}${alpha})`;
+            ctx.strokeStyle = `${theme.lineColor}${alpha})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
@@ -217,8 +185,8 @@ export default function AiInteractiveBackground({ children, className = "" }) {
         const currentAlpha = p1.baseAlpha + Math.sin(p1.pulseVal) * 0.15;
         ctx.beginPath();
         ctx.arc(p1.x, p1.y, p1.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `${currentTheme.particleColor}${Math.max(0.12, currentAlpha)})`;
-        ctx.shadowColor = currentTheme.accentHex;
+        ctx.fillStyle = `${theme.particleColor}${Math.max(0.12, currentAlpha)})`;
+        ctx.shadowColor = theme.accentHex;
         ctx.shadowBlur = 6;
         ctx.fill();
         ctx.shadowBlur = 0; // reset
@@ -235,7 +203,7 @@ export default function AiInteractiveBackground({ children, className = "" }) {
       window.removeEventListener("mousemove", handleWindowMouseMove);
       window.removeEventListener("mouseleave", handleWindowMouseLeave);
     };
-  }, [ambientMood, currentTheme]);
+  }, []);
 
   return (
     <div className={`relative ${className}`}>
@@ -247,59 +215,13 @@ export default function AiInteractiveBackground({ children, className = "" }) {
 
       {/* Ambient Diffuse Backlight Orbs */}
       <div
-        className="pointer-events-none fixed top-16 left-1/4 w-[600px] h-[350px] rounded-full blur-[130px] transition-colors duration-1000 -z-10"
-        style={{ background: currentTheme.ambientGlow1 }}
+        className="pointer-events-none fixed top-16 left-1/4 w-[600px] h-[350px] rounded-full blur-[130px] -z-10"
+        style={{ background: theme.ambientGlow1 }}
       />
       <div
-        className="pointer-events-none fixed bottom-20 right-1/4 w-[550px] h-[320px] rounded-full blur-[130px] transition-colors duration-1000 -z-10"
-        style={{ background: currentTheme.ambientGlow2 }}
+        className="pointer-events-none fixed bottom-20 right-1/4 w-[550px] h-[320px] rounded-full blur-[130px] -z-10"
+        style={{ background: theme.ambientGlow2 }}
       />
-
-      {/* Floating AI Dining Ambiance Switcher Pill */}
-      <div className="relative z-20 flex justify-center pt-3 pb-1">
-        <div className="inline-flex items-center gap-1.5 p-1 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 shadow-md">
-          <div className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>AI Ambiance</span>
-          </div>
-
-          <button
-            onClick={() => setAmbientMood("sizzle")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              ambientMood === "sizzle"
-                ? moodThemes.sizzle.activeBg
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Sizzling Grill</span>
-          </button>
-
-          <button
-            onClick={() => setAmbientMood("fresh")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              ambientMood === "fresh"
-                ? moodThemes.fresh.activeBg
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <Leaf className="w-3.5 h-3.5" />
-            <span>Bistro Garden</span>
-          </button>
-
-          <button
-            onClick={() => setAmbientMood("midnight")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              ambientMood === "midnight"
-                ? moodThemes.midnight.activeBg
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <Wine className="w-3.5 h-3.5" />
-            <span>Midnight Lounge</span>
-          </button>
-        </div>
-      </div>
 
       {/* Children content (Full Page: Hero, Cards, Ticker, Pricing, Contact, etc.) */}
       <div className="relative z-10">{children}</div>
