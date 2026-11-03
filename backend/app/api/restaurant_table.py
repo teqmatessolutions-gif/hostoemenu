@@ -138,8 +138,8 @@ def get_live_tables_status(
                 effective_status = "Reserved"
                 if not guest_name and t_res:
                     guest_name = t_res.guest_name
-            elif t.status in ["Occupied", "Waiting for Bill"]:
-                effective_status = t.status
+            elif t.status == "Occupied":
+                effective_status = "Occupied"
             else:
                 effective_status = "Vacant"
 
@@ -170,7 +170,12 @@ def get_live_tables_status(
             "guest_name": guest_name,
             "items": active_items,
             "active_order_ids": [o.id for o in t_orders],
-            "reservation": reservation_info
+            "reservation": reservation_info,
+            "is_reserved_window": is_res_active_now,
+            "can_seat_walkin": not is_res_active_now and effective_status == "Vacant",
+            "can_seat_reserved": t_res_obj is not None,
+            "reserved_guest_name": t_res_obj.guest_name if t_res_obj else None,
+            "reserved_time": t_res_obj.reservation_time if t_res_obj else None
         })
 
     return {

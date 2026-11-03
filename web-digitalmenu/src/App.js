@@ -27,7 +27,9 @@ export default function App() {
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [reserveSuccess, setReserveSuccess] = useState(null);
   const [reserveLoading, setReserveLoading] = useState(false);
+  const [publicTables, setPublicTables] = useState([]);
   const [reserveForm, setReserveForm] = useState({
+    table_id: "",
     guest_name: "",
     guest_phone: "",
     guest_email: "",
@@ -47,6 +49,7 @@ export default function App() {
     try {
       const payload = {
         branch_id: selectedBranchId ? parseInt(selectedBranchId) : (branches.length > 0 ? branches[0].id : 2),
+        table_id: reserveForm.table_id ? parseInt(reserveForm.table_id) : undefined,
         guest_name: reserveForm.guest_name.trim(),
         guest_phone: reserveForm.guest_phone.trim(),
         guest_email: reserveForm.guest_email.trim() || undefined,
@@ -72,6 +75,23 @@ export default function App() {
       toast.error("Network error while booking table reservation.");
     } finally {
       setReserveLoading(false);
+    }
+  };
+
+  const handleCancelCustomerReservation = async (resId) => {
+    if (!window.confirm("Are you sure you want to cancel your table reservation?")) return;
+    try {
+      const res = await fetch(`${API}/public/table-reservations/${resId}/cancel`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Reservation cancelled successfully. Table has been released.");
+        setReserveSuccess(null);
+        setShowReserveModal(false);
+      } else {
+        toast.error(data.detail || "Failed to cancel reservation");
+      }
+    } catch (err) {
+      toast.error("Network error while cancelling reservation");
     }
   };
 
@@ -239,10 +259,16 @@ export default function App() {
       setLoadingMenu(true);
       try {
         const bParam = currentBranch?.id ? `?branch_id=${currentBranch.id}` : "";
-        const [itemsRes, catsRes] = await Promise.all([
+        const [itemsRes, catsRes, tablesRes] = await Promise.all([
           fetch(`${API}/public/food-items${bParam}`),
-          fetch(`${API}/public/food-categories${bParam}`)
+          fetch(`${API}/public/food-categories${bParam}`),
+          fetch(`${API}/public/tables${bParam}`).catch(() => null)
         ]);
+
+        if (tablesRes && tablesRes.ok) {
+          const tablesData = await tablesRes.json();
+          setPublicTables(tablesData || []);
+        }
 
         if (itemsRes.ok) {
           const itemsData = await itemsRes.json();
@@ -1779,6 +1805,15 @@ export default function App() {
                     Done
                   </button>
                 </div>
+
+                {/* Cancel Reservation Action */}
+                <button
+                  type="button"
+                  onClick={() => handleCancelCustomerReservation(reserveSuccess.reservation_id || reserveSuccess.id)}
+                  className="w-full mt-2 py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                >
+                  <span>❌ Cancel This Reservation</span>
+                </button>
               </div>
             ) : (
               <form onSubmit={handleReserveTable} className="py-4 space-y-4 text-xs">
@@ -1798,7 +1833,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Date & Guest Count */}
+                {/* Date, Guest Count & Table Selection */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 block mb-1">Reservation Date *</label>
@@ -1824,6 +1859,23 @@ export default function App() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Preferred Table Choice */}
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Choose Preferred Table (Optional)</label>
+                  <select
+                    value={reserveForm.table_id || ""}
+                    onChange={(e) => setReserveForm(prev => ({ ...prev, table_id: e.target.value }))}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">⚡ Any Available Table (Auto-Allocated)</option>
+                    {publicTables.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        Table {t.table_number} ({t.seating_capacity || 4} Seats)
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Time Slot Picker */}

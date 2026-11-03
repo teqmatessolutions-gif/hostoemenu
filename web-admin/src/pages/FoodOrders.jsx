@@ -103,6 +103,7 @@ export default function FoodOrders() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guestType, setGuestType] = useState("walkin"); // "walkin" or "reserved"
   const [extraNotes, setExtraNotes] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -1109,9 +1110,8 @@ export default function FoodOrders() {
           console.error("Error fetching food orders:", err);
           return { data: [] };
         }),
-        api.get("/restaurant-tables").catch(err => {
-          console.error("Error fetching tables:", err);
-          return { data: [] };
+        api.get("/restaurant-tables/live-status").catch(err => {
+          return api.get("/restaurant-tables").catch(e => ({ data: [] }));
         }),
         api.get("/employees?limit=1000").catch(err => {
           console.error("Error fetching employees:", err);
@@ -1135,7 +1135,7 @@ export default function FoodOrders() {
         })
       ]);
       setOrders(ordersRes?.data || []);
-      setTables(roomsRes?.data || []);
+      setTables(roomsRes?.data?.tables || (Array.isArray(roomsRes?.data) ? roomsRes.data : []));
       setHasMore((ordersRes?.data || []).length === 20);
       console.log("Food Orders - Employees fetched:", employeesRes?.data);
       setEmployees(Array.isArray(employeesRes?.data) ? employeesRes.data : []);
@@ -1370,6 +1370,18 @@ export default function FoodOrders() {
     setAmount(total);
   };
 
+  const handleCancelReservationDirect = async (resId) => {
+    if (!window.confirm("Are you sure you want to cancel this reservation and release the table?")) return;
+    try {
+      const headers = branchId ? { 'X-Branch-ID': branchId.toString() } : {};
+      await api.post(`/table-reservations/${resId}/cancel`, {}, { headers });
+      toast.success("Reservation cancelled and table made Available!");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Failed to cancel reservation");
+    }
+  };
+
   const handleSubmit = async (autoPrintKOT = false) => {
     if (orderType === "dine_in" && !tableId) {
       toast.error("Please select a dining table.");
@@ -1382,6 +1394,14 @@ export default function FoodOrders() {
     if (selectedItems.filter(i => i.food_item_id).length === 0) {
       toast.error("Please select at least one food dish.");
       return;
+    }
+
+    if (orderType === "dine_in" && tableId) {
+      const selectedTable = tables.find(t => (t.id || '').toString() === tableId.toString());
+      if (selectedTable?.reservation && (selectedTable.is_reserved_window || selectedTable.status === "Reserved") && guestType === "walkin") {
+        toast.error(`Table ${selectedTable.table_number} is currently reserved for ${selectedTable.reservation.guest_name}. Walk-in dining is disabled during reserved time unless reservation is cancelled.`);
+        return;
+      }
     }
 
     let finalDeliveryRequest = null;
@@ -1401,9 +1421,11 @@ export default function FoodOrders() {
       finalDeliveryRequest = parts.join(" | ");
     } else {
       // Dine In
-      if (combinedNotes) {
-        finalDeliveryRequest = `Kitchen Notes: ${combinedNotes}`;
-      }
+      const parts = [];
+      if (deliveryCustomerName.trim()) parts.push(`Guest: ${deliveryCustomerName.trim()}`);
+      if (deliveryPhone.trim()) parts.push(`Phone: ${deliveryPhone.trim()}`);
+      if (combinedNotes) parts.push(`Notes: ${combinedNotes}`);
+      if (parts.length > 0) finalDeliveryRequest = parts.join(" | ");
     }
 
     const payload = {
@@ -2650,25 +2672,136 @@ export default function FoodOrders() {
                   {/* Modal Content */}
                   <div className="overflow-y-auto p-6 space-y-6">
                     {/* Order Destination / Table Selection */}
-                    {orderType === "dine_in" && (
-                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm">
-                        <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-2">
-                          Select Dining Table *
-                        </label>
-                        <select
-                          value={tableId}
-                          onChange={(e) => setTableId(e.target.value)}
-                          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition text-slate-900 font-bold text-sm shadow-sm"
-                        >
-                          <option value="">Choose dining table...</option>
-                          {tables.map((table) => (
-                            <option key={table.id} value={table.id}>
-                              Table {table.table_number} ({table.seating_capacity || 4} Seats) · {table.status}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    {orderType === "dine_in" && (() => {
+                      const selectedTableObj = tables.find(t => (t.id || '').toString() === (tableId || '').toString());
+                      const isReservedSlot = selectedTableObj?.is_reserved_window || (selectedTableObj?.status === "Reserved");
+                      const hasUpcomingRes = selectedTableObj?.reservation && !isReservedSlot;
+
+                      return (
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 shadow-sm space-y-3">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-black text-slate-700 uppercase tracking-wider">
+                              Select Dining Table *
+                            </label>
+                            {selectedTableObj && (
+                              <span className="text-[11px] font-bold text-slate-500">
+                                Capacity: {selectedTableObj.seating_capacity || 4} Guests
+                              </span>
+                            )}
+                          </div>
+
+                          <select
+                            value={tableId}
+                            onChange={(e) => {
+                              const tId = e.target.value;
+                              setTableId(tId);
+                              const found = tables.find(t => (t.id || '').toString() === tId.toString());
+                              if (found?.reservation) {
+                                if (found.is_reserved_window || found.status === "Reserved") {
+                                  setGuestType("reserved");
+                                  setDeliveryCustomerName(found.reservation.guest_name || "");
+                                  setDeliveryPhone(found.reservation.guest_phone || "");
+                                }
+                              }
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 transition text-slate-900 font-bold text-sm shadow-sm"
+                          >
+                            <option value="">Choose dining table...</option>
+                            {tables.map((table) => {
+                              const isSlotActive = table.is_reserved_window || (table.status === "Reserved");
+                              const hasUpcoming = table.reservation && !isSlotActive;
+                              let labelBadge = table.status;
+                              if (isSlotActive) {
+                                labelBadge = `🔒 RESERVED for ${table.reservation?.guest_name || 'Guest'} (${table.reservation?.time || ''}) - Reserved Guest Only`;
+                              } else if (hasUpcoming) {
+                                labelBadge = `🟢 Vacant (Free until ${table.reservation.time} · Res: ${table.reservation.guest_name})`;
+                              } else if (table.status === "Occupied") {
+                                labelBadge = `🔴 Occupied`;
+                              } else if (table.status === "Waiting for Bill") {
+                                labelBadge = `🟡 Waiting for Bill`;
+                              } else {
+                                labelBadge = `🟢 Vacant`;
+                              }
+
+                              return (
+                                <option key={table.id} value={table.id}>
+                                  Table {table.table_number} ({table.seating_capacity || 4} Seats) · {labelBadge}
+                                </option>
+                              );
+                            })}
+                          </select>
+
+                          {/* Guest Type Options when table has a reservation */}
+                          {selectedTableObj?.reservation && (
+                            <div className="p-3 bg-white rounded-xl border border-purple-200 shadow-sm space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-slate-800">
+                                  Table Reservation: <span className="text-purple-700">{selectedTableObj.reservation.guest_name}</span> at {selectedTableObj.reservation.time}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelReservationDirect(selectedTableObj.reservation.id)}
+                                  className="text-xs font-bold text-rose-600 hover:text-rose-800 underline flex items-center gap-1"
+                                  title="Cancel reservation to release table for any walk-in guest"
+                                >
+                                  <span>Cancel Reservation</span>
+                                </button>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  disabled={isReservedSlot}
+                                  onClick={() => {
+                                    setGuestType("walkin");
+                                    setDeliveryCustomerName("");
+                                    toast(`Seating walk-in guest on Table ${selectedTableObj.table_number}. Please ensure table is free before ${selectedTableObj.reservation.time}!`, { icon: '⏰' });
+                                  }}
+                                  className={`p-2.5 rounded-xl text-xs font-bold border transition text-left flex flex-col ${
+                                    isReservedSlot
+                                      ? "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed"
+                                      : guestType === "walkin"
+                                        ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  <span className="font-black">🍽️ Walk-in Dine Guest</span>
+                                  <span className={`text-[10px] mt-0.5 ${guestType === "walkin" ? "text-indigo-100" : "text-slate-500"}`}>
+                                    {isReservedSlot ? "Disabled during reserved time" : `Free until ${selectedTableObj.reservation.time}`}
+                                  </span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setGuestType("reserved");
+                                    setDeliveryCustomerName(selectedTableObj.reservation.guest_name || "");
+                                    setDeliveryPhone(selectedTableObj.reservation.guest_phone || "");
+                                  }}
+                                  className={`p-2.5 rounded-xl text-xs font-bold border transition text-left flex flex-col ${
+                                    guestType === "reserved"
+                                      ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  <span className="font-black">👥 Reserved Guest</span>
+                                  <span className={`text-[10px] mt-0.5 ${guestType === "reserved" ? "text-purple-100" : "text-slate-500"}`}>
+                                    {selectedTableObj.reservation.guest_name} ({selectedTableObj.reservation.time})
+                                  </span>
+                                </button>
+                              </div>
+
+                              {isReservedSlot && (
+                                <div className="bg-amber-50 text-amber-900 border border-amber-200 rounded-lg p-2 text-[11px] font-semibold flex items-center gap-1.5">
+                                  <span>🔒</span>
+                                  <span>Reserved time slot active. This table is currently locked only for reserved guest {selectedTableObj.reservation.guest_name}.</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Order Type Selection */}
                     <div>

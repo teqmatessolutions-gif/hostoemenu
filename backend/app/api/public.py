@@ -18,7 +18,7 @@ from app.schemas.foodorder import FoodOrderCreate, FoodOrderOut
 from app.schemas.service_request import ServiceRequestCreate, ServiceRequestOut
 from typing import List
 from pydantic import BaseModel
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 
 # Import other schemas if needed or stick to simple
 router = APIRouter(prefix="/public", tags=["Public"])
@@ -374,8 +374,29 @@ def create_public_table_reservation(
             if table:
                 table_id = table.id
 
+        # Check if reservation is active right now (IST)
+        ist = timezone(timedelta(hours=5, minutes=30))
+        now_ist = datetime.now(timezone.utc).astimezone(ist)
+        today_str = now_ist.strftime("%Y-%m-%d")
+        current_time_minutes = now_ist.hour * 60 + now_ist.minute
+
+        res_date = payload.get("reservation_date")
+        res_time = payload.get("reservation_time")
+        is_active_now = False
+        if res_date == today_str and res_time:
+            try:
+                parts = res_time.split(":")
+                diff = (int(parts[0]) * 60 + int(parts[1])) - current_time_minutes
+                if -90 <= diff <= 45:
+                    is_active_now = True
+            except Exception:
+                pass
+
         if table:
-            table.status = "Reserved"
+            if is_active_now:
+                table.status = "Reserved"
+            elif table.status == "Reserved":
+                table.status = "Available"
 
         reservation = TableReservation(
             branch_id=branch_id,
@@ -409,3 +430,59 @@ def create_public_table_reservation(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to reserve table: {str(e)}")
+
+
+@router.post("/table-reservations/{res_id}/cancel")
+def cancel_public_table_reservation(res_id: int, db: Session = Depends(get_db)):
+    """Cancel table reservation from customer end or public view"""
+    try:
+        from app.models.table_reservation import TableReservation
+        from app.models.restaurant_table import RestaurantTable
+
+        reservation = db.query(TableReservation).filter(TableReservation.id == res_id).first()
+        if not reservation:
+            raise HTTPException(status_code=404, detail="Reservation not found")
+
+        reservation.status = "cancelled"
+        if reservation.table_id:
+            table = db.query(RestaurantTable).filter(RestaurantTable.id == reservation.table_id).first()
+            if table and table.status == "Reserved":
+                table.status = "Available"
+
+        db.commit()
+        return {"success": True, "message": "Reservation cancelled successfully and table released."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to cancel reservation: {str(e)}")
+
+@router.get("/table-reservations/lookup")
+def lookup_public_table_reservations(phone: str, db: Session = Depends(get_db)):
+    """Look up active bookings by phone for customer reservation management"""
+    try:
+        from app.models.table_reservation import TableReservation
+        from app.models.restaurant_table import RestaurantTable
+
+        clean_phone = phone.strip()[-10:] if len(phone.strip()) >= 10 else phone.strip()
+        reservations = db.query(TableReservation).filter(
+            TableReservation.guest_phone.ilike(f"%{clean_phone}%"),
+            TableReservation.status.in_(["confirmed", "seated"])
+        ).order_by(TableReservation.reservation_date.desc(), TableReservation.reservation_time.asc()).all()
+
+        result = []
+        for r in reservations:
+            t = db.query(RestaurantTable).filter(RestaurantTable.id == r.table_id).first() if r.table_id else None
+            result.append({
+                "id": r.id,
+                "guest_name": r.guest_name,
+                "guest_phone": r.guest_phone,
+                "guest_count": r.guest_count,
+                "reservation_date": str(r.reservation_date),
+                "reservation_time": str(r.reservation_time),
+                "status": r.status,
+                "table_number": t.table_number if t else "Assigned upon arrival"
+            })
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to lookup reservations: {str(e)}")
