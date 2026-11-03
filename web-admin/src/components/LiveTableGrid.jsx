@@ -466,10 +466,18 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       </div>
                     )}
                     {isOccupied && (
-                      <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[11px] font-black px-2.5 py-1 rounded-full border border-rose-300 shadow-sm animate-pulse">
-                        <span className="w-2 h-2 rounded-full bg-rose-600" />
-                        Occupied
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 text-[11px] font-black px-2.5 py-1 rounded-full border border-rose-300 shadow-sm animate-pulse">
+                          <span className="w-2 h-2 rounded-full bg-rose-600" />
+                          Occupied
+                        </span>
+                        {Boolean(t.reservation) && (
+                          <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-900 text-[10px] font-black px-2 py-0.5 rounded-full border border-purple-200 shadow-sm" title={`Reserved for ${t.reservation.guest_name} at ${t.reservation.time}. Free table before then!`}>
+                            <Clock className="w-3 h-3 text-purple-600" />
+                            Res {t.reservation.time}
+                          </span>
+                        )}
+                      </div>
                     )}
                     {isWaitingBill && (
                       <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[11px] font-black px-2.5 py-1 rounded-full border border-amber-500 shadow-sm">
@@ -573,24 +581,29 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       <p className="text-[10px] text-slate-400">Ready for walk-in guest</p>
 
                       {hasUpcomingRes && (
-                        <div className="mt-2 text-left bg-purple-50/90 rounded-2xl p-2.5 border border-purple-200/80 shadow-inner space-y-1">
-                          <div className="flex items-center justify-between text-[10px] font-black text-purple-700 uppercase tracking-wider">
+                        <div className="mt-2.5 text-left bg-gradient-to-br from-purple-50 via-white to-indigo-50/50 rounded-2xl p-3 border border-purple-200 shadow-sm space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-black text-purple-800 uppercase tracking-wider">
                             <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-purple-600" />
+                              <Clock className="w-3.5 h-3.5 text-purple-600" />
                               Reserved at {t.reservation.time}
                             </span>
-                            <span className="text-[10px] font-bold text-purple-900 bg-purple-200/70 px-1.5 py-0.5 rounded-full">
-                              👥 {t.reservation.guest_count}
+                            <span className="text-[10px] font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200">
+                              👥 {t.reservation.guest_count} Guests
                             </span>
                           </div>
-                          <p className="text-xs font-black text-slate-900 truncate">
-                            👤 {t.reservation.guest_name}
-                          </p>
-                          {t.reservation.guest_phone && (
-                            <p className="text-[10px] text-slate-500 font-medium">
-                              📞 {t.reservation.guest_phone}
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-black text-slate-900 truncate">
+                              👤 {t.reservation.guest_name}
                             </p>
-                          )}
+                            {t.reservation.minutes_until && t.reservation.minutes_until > 0 && t.reservation.minutes_until < 300 && (
+                              <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                Free for ~{Math.floor(t.reservation.minutes_until / 60)}h {t.reservation.minutes_until % 60}m
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-purple-900 font-semibold bg-white/80 p-1.5 rounded-lg border border-purple-100">
+                            ✨ You can seat walk-in guests now until {t.reservation.time}!
+                          </p>
                         </div>
                       )}
                     </div>
@@ -683,25 +696,37 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                     <>
                       <button
                         onClick={() => {
+                          if (hasUpcomingRes) {
+                            toast(`⚠️ Seating walk-in guest on Table ${t.table_number}. Please ensure table is free before ${t.reservation.time} for ${t.reservation.guest_name}!`, { icon: '⏰', duration: 5000 });
+                          }
                           handleUpdateStatus(t.id, 'Occupied');
                           if (onNavigateToOrder) onNavigateToOrder(t.id);
                         }}
                         className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs py-2 px-2 rounded-xl transition flex items-center justify-center gap-1 shadow-sm active:scale-95"
-                        title="Seat dining guests and take order"
+                        title={hasUpcomingRes ? `Seat walk-in guest now (Table reserved at ${t.reservation.time})` : "Seat dining guests and take order"}
                       >
                         <UtensilsCrossed className="w-3.5 h-3.5" />
-                        <span>Seat &amp; Order</span>
+                        <span>Seat Walk-in</span>
                       </button>
 
                       {hasUpcomingRes ? (
-                        <button
-                          onClick={() => handleSeatReservedGuests(t.reservation.id)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2.5 rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95"
-                          title={`Seat reserved guest (${t.reservation.guest_name}) if arrived early`}
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                          <span>Seat Guest</span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleSeatReservedGuests(t.reservation.id)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2.5 rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95"
+                            title={`Seat reserved guest (${t.reservation.guest_name}) if arrived early`}
+                          >
+                            <Users className="w-3.5 h-3.5" />
+                            <span>Seat {t.reservation.guest_name}</span>
+                          </button>
+                          <button
+                            onClick={() => handleCancelReservation(t.reservation.id)}
+                            className="p-2 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 transition"
+                            title="Cancel / Release Reservation"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </>
                       ) : (
                         <button
                           onClick={() => {
