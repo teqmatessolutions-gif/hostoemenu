@@ -54,12 +54,17 @@ def get_live_tables_status(
     today_str = now_ist.strftime("%Y-%m-%d")
     current_time_minutes = now_ist.hour * 60 + now_ist.minute
 
-    # Check active confirmed reservations for target branch
+    # Check active confirmed reservations for target branch (supports multiple reservations per table)
     active_reservations = db.query(TableReservation).filter(
         TableReservation.branch_id == target_branch_id,
         TableReservation.status == "confirmed"
     ).all()
-    reservations_by_table = {r.table_id: r for r in active_reservations if r.table_id}
+    reservations_by_table = {}
+    for r in active_reservations:
+        if r.table_id:
+            if r.table_id not in reservations_by_table:
+                reservations_by_table[r.table_id] = []
+            reservations_by_table[r.table_id].append(r)
 
     # 2. All active orders for target branch
     active_orders = db.query(FoodOrder).options(
@@ -82,24 +87,46 @@ def get_live_tables_status(
     live_tables = []
     for t in tables:
         t_orders = orders_by_table.get(t.id, [])
-        # Check table reservation timing
-        t_res = reservations_by_table.get(t.id)
-        is_res_today = False
-        is_res_active_now = False
-        res_minutes_until = None
-
-        if t_res:
-            is_res_today = (t_res.reservation_date == today_str)
-            if is_res_today and t_res.reservation_time:
+        # Check table reservation timing - supports multiple reservations across the day
+        t_res_list = reservations_by_table.get(t.id, [])
+        today_res_items = []
+        active_res_item = None
+        
+        for r in t_res_list:
+            if r.reservation_date == today_str and r.reservation_time:
                 try:
-                    parts = t_res.reservation_time.split(":")
-                    res_minutes = int(parts[0]) * 60 + int(parts[1])
-                    res_minutes_until = res_minutes - current_time_minutes
-                    # Active reservation window: 45 mins before reservation time up to 90 mins after
-                    if -90 <= res_minutes_until <= 45:
-                        is_res_active_now = True
+                    parts = r.reservation_time.split(":")
+                    res_mins = int(parts[0]) * 60 + int(parts[1])
+                    diff = res_mins - current_time_minutes
+                    is_active = (-90 <= diff <= 45)
+                    item = {
+                        "id": r.id,
+                        "guest_name": r.guest_name,
+                        "guest_phone": r.guest_phone,
+                        "guest_count": r.guest_count,
+                        "date": r.reservation_date,
+                        "time": r.reservation_time,
+                        "minutes_until": diff,
+                        "is_active_now": is_active,
+                        "notes": r.special_notes
+                    }
+                    today_res_items.append(item)
+                    if is_active and not active_res_item:
+                        active_res_item = item
                 except Exception:
                     pass
+
+        # Sort reservations chronologically
+        today_res_items.sort(key=lambda x: x["time"])
+        
+        # Primary reservation: active one, or the earliest upcoming one today
+        upcoming_res_item = next((r for r in today_res_items if r["minutes_until"] > 45), None)
+        primary_res = active_res_item or upcoming_res_item or (today_res_items[0] if today_res_items else None)
+        
+        is_res_active_now = (active_res_item is not None)
+        is_res_today = len(today_res_items) > 0
+        res_minutes_until = primary_res["minutes_until"] if primary_res else None
+        t_res = primary_res
         total_bill = 0.0
         active_items = []
         guest_name = ""
@@ -143,20 +170,6 @@ def get_live_tables_status(
             else:
                 effective_status = "Vacant"
 
-        t_res_obj = reservations_by_table.get(t.id)
-        reservation_info = {
-            "id": t_res_obj.id,
-            "guest_name": t_res_obj.guest_name,
-            "guest_phone": t_res_obj.guest_phone,
-            "guest_count": t_res_obj.guest_count,
-            "date": t_res_obj.reservation_date,
-            "time": t_res_obj.reservation_time,
-            "is_today": is_res_today,
-            "is_active_now": is_res_active_now,
-            "minutes_until": res_minutes_until,
-            "notes": t_res_obj.special_notes
-        } if t_res_obj else None
-
         live_tables.append({
             "id": t.id,
             "table_number": t.table_number,
@@ -170,12 +183,14 @@ def get_live_tables_status(
             "guest_name": guest_name,
             "items": active_items,
             "active_order_ids": [o.id for o in t_orders],
-            "reservation": reservation_info,
+            "reservation": primary_res,
+            "all_reservations": today_res_items,
+            "reservations_count": len(today_res_items),
             "is_reserved_window": is_res_active_now,
             "can_seat_walkin": not is_res_active_now and effective_status == "Vacant",
-            "can_seat_reserved": t_res_obj is not None,
-            "reserved_guest_name": t_res_obj.guest_name if t_res_obj else None,
-            "reserved_time": t_res_obj.reservation_time if t_res_obj else None
+            "can_seat_reserved": len(today_res_items) > 0,
+            "reserved_guest_name": primary_res["guest_name"] if primary_res else None,
+            "reserved_time": primary_res["time"] if primary_res else None
         })
 
     return {

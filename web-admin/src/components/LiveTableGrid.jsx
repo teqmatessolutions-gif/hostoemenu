@@ -581,28 +581,67 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                       <p className="text-[10px] text-slate-400">Ready for walk-in guest</p>
 
                       {hasUpcomingRes && (
-                        <div className="mt-2.5 text-left bg-gradient-to-br from-purple-50 via-white to-indigo-50/50 rounded-2xl p-3 border border-purple-200 shadow-sm space-y-1.5">
+                        <div className="mt-2.5 text-left bg-gradient-to-br from-purple-50 via-white to-indigo-50/50 rounded-2xl p-3 border border-purple-200 shadow-sm space-y-2">
                           <div className="flex items-center justify-between text-[10px] font-black text-purple-800 uppercase tracking-wider">
                             <span className="flex items-center gap-1">
                               <Clock className="w-3.5 h-3.5 text-purple-600" />
-                              Reserved at {t.reservation.time}
+                              {t.all_reservations && t.all_reservations.length > 1
+                                ? `${t.all_reservations.length} Booked Slots Today`
+                                : `Reserved at ${t.reservation?.time || ''}`}
                             </span>
-                            <span className="text-[10px] font-bold text-purple-900 bg-purple-100 px-2 py-0.5 rounded-full border border-purple-200">
-                              👥 {t.reservation.guest_count} Guests
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setAdminReserveTableId(t.id.toString());
+                                setIsAdminReserveOpen(true);
+                              }}
+                              className="text-[9px] font-black text-purple-700 bg-purple-100 hover:bg-purple-200 px-2 py-0.5 rounded-md border border-purple-200 transition"
+                              title="Add another reservation for a different time slot on this table"
+                            >
+                              + Add Slot
+                            </button>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs font-black text-slate-900 truncate">
-                              👤 {t.reservation.guest_name}
-                            </p>
-                            {t.reservation.minutes_until && t.reservation.minutes_until > 0 && t.reservation.minutes_until < 300 && (
-                              <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
-                                Free for ~{Math.floor(t.reservation.minutes_until / 60)}h {t.reservation.minutes_until % 60}m
-                              </span>
-                            )}
+
+                          {/* List of all reservations on this table */}
+                          <div className="space-y-1.5">
+                            {(t.all_reservations || (t.reservation ? [t.reservation] : [])).map((res, idx) => (
+                              <div key={res.id || idx} className="flex items-center justify-between bg-white/95 p-2 rounded-xl border border-purple-100 text-xs shadow-xs">
+                                <div>
+                                  <div className="flex items-center gap-1.5 font-black text-slate-900">
+                                    <span className="text-purple-700 font-extrabold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200 text-[10px]">
+                                      ⏰ {res.time}
+                                    </span>
+                                    <span className="truncate max-w-[100px]">{res.guest_name}</span>
+                                    <span className="text-[10px] font-medium text-slate-500">({res.guest_count}p)</span>
+                                  </div>
+                                  {res.minutes_until > 0 && res.minutes_until < 400 && (
+                                    <span className="text-[9px] text-emerald-700 font-bold block mt-0.5">
+                                      Free for ~{Math.floor(res.minutes_until / 60)}h {res.minutes_until % 60}m
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => handleSeatReservedGuests(res.id)}
+                                    className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[10px] rounded-lg transition"
+                                    title={`Seat ${res.guest_name}`}
+                                  >
+                                    Seat
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelReservation(res.id)}
+                                    className="p-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition"
+                                    title={`Cancel reservation for ${res.guest_name}`}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
+
                           <p className="text-[10px] text-purple-900 font-semibold bg-white/80 p-1.5 rounded-lg border border-purple-100">
-                            ✨ You can seat walk-in guests now until {t.reservation.time}!
+                            ✨ Walk-in guests can dine anytime between reserved time slots!
                           </p>
                         </div>
                       )}
@@ -714,15 +753,26 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                         <>
                           <button
                             onClick={() => handleSeatReservedGuests(t.reservation.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2.5 rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs py-2 px-2 rounded-xl transition flex items-center gap-1 shadow-sm active:scale-95"
                             title={`Seat reserved guest (${t.reservation.guest_name}) if arrived early`}
                           >
                             <Users className="w-3.5 h-3.5" />
                             <span>Seat {t.reservation.guest_name}</span>
                           </button>
                           <button
+                            onClick={() => {
+                              setAdminReserveTableId(t.id.toString());
+                              setIsAdminReserveOpen(true);
+                            }}
+                            className="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-bold text-xs py-2 px-2 rounded-xl transition flex items-center gap-1"
+                            title="Add another reservation for a different time slot on this table"
+                          >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>+ Slot</span>
+                          </button>
+                          <button
                             onClick={() => handleCancelReservation(t.reservation.id)}
-                            className="py-2 px-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1 transition"
+                            className="py-2 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1 transition"
                             title="Cancel / Release Reservation"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -1107,11 +1157,16 @@ export default function LiveTableGrid({ onNavigateToOrder }) {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-500 font-bold"
                   >
                     <option value="">Auto-Assign Best Available Table</option>
-                    {(data.tables || []).map(t => (
-                      <option key={t.id} value={t.id.toString()}>
-                        Table {t.table_number} ({t.status}) - {t.seating_capacity || 4} Seats
-                      </option>
-                    ))}
+                    {(data.tables || []).map(t => {
+                      const resSlots = t.all_reservations && t.all_reservations.length > 0
+                        ? ` [Booked: ${t.all_reservations.map(r => r.time).join(', ')}]`
+                        : '';
+                      return (
+                        <option key={t.id} value={t.id.toString()}>
+                          Table {t.table_number} ({t.status}) - {t.seating_capacity || 4} Seats{resSlots}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 

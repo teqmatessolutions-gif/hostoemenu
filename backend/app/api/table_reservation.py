@@ -69,6 +69,29 @@ def create_reservation_admin(
         ).first()
         if not table:
             raise HTTPException(status_code=404, detail="Selected dining table not found")
+
+        # Allow multiple reservations on the same table at different times (check 90-min overlap)
+        if payload.reservation_time:
+            existing_same_day = db.query(TableReservation).filter(
+                TableReservation.table_id == payload.table_id,
+                TableReservation.reservation_date == payload.reservation_date,
+                TableReservation.status == "confirmed"
+            ).all()
+            try:
+                new_parts = payload.reservation_time.split(":")
+                new_mins = int(new_parts[0]) * 60 + int(new_parts[1])
+                for ex in existing_same_day:
+                    if ex.reservation_time:
+                        ex_parts = ex.reservation_time.split(":")
+                        ex_mins = int(ex_parts[0]) * 60 + int(ex_parts[1])
+                        if abs(new_mins - ex_mins) < 90:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"Table {table.table_number} is already reserved for {ex.guest_name} at {ex.reservation_time}. Please allow at least 90 minutes between reservations."
+                            )
+            except ValueError:
+                pass
+
         # Only mark table status as Reserved if the reservation is occurring now
         ist = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
         now_ist = datetime.datetime.now(datetime.timezone.utc).astimezone(ist)
